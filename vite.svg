@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64">
+  <title>Vite Bolt</title>
+  <rect width="100%" height="100%" fill="#0EA5A6" rx="4" />
+  <path d="M13 3L4 14h7l-1 7 9-11h-7z" fill="#fff"/>
+</svg>
