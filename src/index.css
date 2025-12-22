@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Logo sizing variables and helper */
+:root {
+    --logo-mobile-size: 56px;
+    /* new default mobile */
+    --logo-desktop-size: 74px;
+    /* new default desktop */
+}
+
+.site-logo {
+    height: var(--logo-mobile-size) !important;
+    width: auto !important;
+}
+
+@media (min-width: 768px) {
+    .site-logo {
+        height: var(--logo-desktop-size) !important;
+    }
+}
