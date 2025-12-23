@@ -10,25 +10,37 @@ import {
 } from 'appwrite';
 
 // Initialize Appwrite client
-const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT as string;
+const rawEndpoint = import.meta.env.VITE_APPWRITE_ENDPOINT;
+const endpoint = typeof rawEndpoint === 'string' ? rawEndpoint.trim() : '';
 // Support both VITE_APPWRITE_PROJECT_ID and VITE_APPWRITE_PROJECT for compatibility
-const projectId = (import.meta.env.VITE_APPWRITE_PROJECT_ID as string) || (import.meta.env.VITE_APPWRITE_PROJECT as string);
+const rawProjectId = (import.meta.env.VITE_APPWRITE_PROJECT_ID as string) || (import.meta.env.VITE_APPWRITE_PROJECT as string);
+const projectId = typeof rawProjectId === 'string' ? rawProjectId.trim() : '';
 
-const client = new Client().setEndpoint(endpoint).setProject(projectId);
-
-const account = new Account(client);
-const databases = new Databases(client);
-let storage: Storage | null = null;
-try {
-    storage = new Storage(client);
-} catch (e) {
-    console.warn('Appwrite storage initialization failed', e);
+const client = new Client();
+if (endpoint) {
+    client.setEndpoint(endpoint);
+} else {
+    console.warn('Appwrite endpoint missing (set VITE_APPWRITE_ENDPOINT). Appwrite SDK disabled.');
+}
+if (projectId) {
+    client.setProject(projectId);
+} else {
+    console.warn('Appwrite project ID missing (set VITE_APPWRITE_PROJECT_ID). Appwrite SDK disabled.');
 }
 
-// Debug: ping Appwrite server at startup so the console shows connectivity status
-client.ping()
-    .then(() => console.debug('Appwrite: ping OK'))
-    .catch((err) => console.warn('Appwrite: ping failed', err));
+const isAppwriteConfigured = Boolean(endpoint && projectId);
+const APPWRITE_CONFIG_ERROR = 'Appwrite is not configured. Set VITE_APPWRITE_ENDPOINT and VITE_APPWRITE_PROJECT_ID (or VITE_APPWRITE_PROJECT).';
+
+const account = isAppwriteConfigured ? new Account(client) : null;
+const databases = isAppwriteConfigured ? new Databases(client) : null;
+let storage: Storage | null = null;
+if (isAppwriteConfigured) {
+    try {
+        storage = new Storage(client);
+    } catch (e) {
+        console.warn('Appwrite storage initialization failed', e);
+    }
+}
 
 // Appwrite Database / Collection / Bucket IDs (set via env)
 const DATABASE_ID = (import.meta.env.VITE_APPWRITE_DATABASE_ID as string) || '';
@@ -36,6 +48,9 @@ const PROFILE_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_PROFILE_COLLECTION_
 const BUCKET_ID = (import.meta.env.VITE_APPWRITE_BUCKET_ID as string) || '';
 
 export async function signUp(email: string, password: string, name?: string) {
+    if (!account) {
+        throw new Error(APPWRITE_CONFIG_ERROR);
+    }
     // Creates a new user account
     // Some Appwrite SDK versions expect (userId, email, password, name)
     // Others may accept (email, password, name) — try both with useful errors.
@@ -121,6 +136,9 @@ export async function signUp(email: string, password: string, name?: string) {
 }
 
 export async function signIn(email: string, password: string) {
+    if (!account) {
+        throw new Error(APPWRITE_CONFIG_ERROR);
+    }
     const accountAny: any = account;
 
     const restSignIn = async () => {
@@ -206,6 +224,14 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function verifyAccount() {
+    if (!isAppwriteConfigured) {
+        return {
+            ok: false,
+            status: 0,
+            headers: {},
+            body: 'Appwrite is not configured.',
+        };
+    }
     const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/account`;
     const res = await fetch(url, {
         method: 'GET',
@@ -230,6 +256,10 @@ export async function verifyAccount() {
 }
 
 export async function getCurrentUser() {
+    if (!account) {
+        console.info('Appwrite is not configured; returning null user.');
+        return null;
+    }
     try {
         return await account.get();
     } catch (err) {
@@ -247,10 +277,16 @@ export async function getCurrentUser() {
 }
 
 export async function signOut() {
+    if (!account) {
+        return;
+    }
     return account.deleteSession('current');
 }
 
 export function signInWithGoogle() {
+    if (!account) {
+        return Promise.reject(new Error(APPWRITE_CONFIG_ERROR));
+    }
     if (typeof window === 'undefined') {
         return Promise.reject(new Error('Google sign-in must run in a browser context.'));
     }
@@ -271,6 +307,9 @@ export function signInWithGoogle() {
  */
 export async function uploadFile(file: File) {
     if (!file) return null;
+    if (!isAppwriteConfigured) {
+        throw new Error(APPWRITE_CONFIG_ERROR);
+    }
     if (storage && BUCKET_ID) {
         try {
             const id = typeof ID?.unique === 'function' ? ID.unique() : `file-${Date.now()}`;
@@ -305,6 +344,9 @@ export async function uploadFile(file: File) {
 }
 
 export async function saveUserProfile(data: Record<string, any>, file?: File) {
+    if (!databases) {
+        throw new Error(APPWRITE_CONFIG_ERROR);
+    }
     if (!DATABASE_ID || !PROFILE_COLLECTION_ID) {
         throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_PROFILE_COLLECTION_ID.');
     }
@@ -416,6 +458,9 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
 }
 
 export async function getUserProfile(userId: string) {
+    if (!databases) {
+        throw new Error(APPWRITE_CONFIG_ERROR);
+    }
     if (!DATABASE_ID || !PROFILE_COLLECTION_ID) {
         throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_PROFILE_COLLECTION_ID.');
     }
@@ -502,7 +547,23 @@ export async function completeProfile(userId: string, data: Record<string, any>)
 }
 
 export async function ping() {
-    return client.ping();
+    if (!isAppwriteConfigured) {
+        throw new Error(APPWRITE_CONFIG_ERROR);
+    }
+
+    const clientAny: any = client as any;
+    if (typeof clientAny?.call === 'function') {
+        await clientAny.call('GET', '/health');
+        return;
+    }
+
+    const baseEndpoint = endpoint.replace(/\/+$/, '');
+    const url = `${baseEndpoint}/health`;
+    const res = await fetch(url, { method: 'GET', headers: { 'Cache-Control': 'no-cache' } });
+    if (!res.ok) {
+        throw new Error(`Appwrite health check failed (${res.status})`);
+    }
+    return;
 }
 
 export { client, account, databases, storage };
