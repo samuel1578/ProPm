@@ -1,25 +1,26 @@
 import { Link } from 'react-router-dom';
 import { Users, Target, Award, MessageSquare, CheckCircle, BookOpen, Clock, Globe } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import logo from '../assets/logo-light.png';
 import communityImg from '../assets/community.jpg';
 import certImg from '../assets/cert.jpg';
 import gyeNyame from '../assets/gye-nyame.png';
 import sankofa from '../assets/sankofa.png';
 
-const container = {
+const container: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.12 } },
 };
 
-const item = {
+const item: Variants = {
   hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.42, 0, 0.58, 1] as [number, number, number, number] } },
 };
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.42, 0, 0.58, 1] as [number, number, number, number] } },
 };
 
 export default function Home() {
@@ -43,7 +44,7 @@ export default function Home() {
 
             <div className="text-center md:text-left max-w-4xl mx-auto md:mx-0 md:pl-12">
               <motion.h1 variants={item} className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-                Learn Project Management by Doing Real Projects
+                Master PMI Certifications with ProPM
               </motion.h1>
 
               {/* Mobile-only image banner placed under title */}
@@ -55,7 +56,7 @@ export default function Home() {
                 />
               </motion.div>
               <motion.p variants={item} className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl">
-                ProPM is a practical project management training platform designed for students and young professionals who want to master PM skills through hands-on experience.
+                ProPM is your comprehensive guide to PMI certifications. Get all the study materials, practice exams, and resources you need to prepare for PMP, CAPM, PMI-ACP, and PfMP certifications.
               </motion.p>
               <motion.div variants={item} className="flex flex-row gap-4 justify-center md:justify-start flex-wrap items-center">
                 <motion.div variants={item} className="inline-flex">
@@ -63,7 +64,7 @@ export default function Home() {
                     to="/courses"
                     className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
                   >
-                    View Courses
+                    View Certifications
                   </Link>
                 </motion.div>
                 <motion.div variants={item} className="inline-flex">
@@ -107,12 +108,12 @@ export default function Home() {
             </div>
 
             <p className="mt-12 text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              ProPM is more than just another online course. We provide practical, hands-on project management training that bridges the gap between theory and real-world application. Our approach combines community learning, live sessions, and real project simulations.
+              ProPM is your ultimate guide to PMI certifications. We provide comprehensive study materials, practice exams, video tutorials, and community support to help you prepare for and pass PMI exams like PMP, CAPM, PMI-ACP, and PfMP. Pay once and get lifetime access to all resources.
             </p>
             <div className="relative mt-6 flex items-start justify-center gap-3 text-left max-w-2xl mx-auto">
               <Award className="h-10 w-10 flex-shrink-0 text-cyan-500 drop-shadow-[0_10px_25px_rgba(14,165,233,0.35)] dark:text-cyan-300" />
               <p className="text-base sm:text-lg text-gray-700 dark:text-gray-200">
-                Our instructors are 100% PMP certified, so every lesson reflects globally recognized standards and best practices.
+                Our instructors are 100% PMP certified, so every resource reflects globally recognized PMI standards and best practices.
               </p>
             </div>
           </motion.div>
@@ -122,9 +123,9 @@ export default function Home() {
                 <div className="w-full h-40 rounded-xl overflow-hidden mb-2">
                   <img src="https://images.pexels.com/photos/8276637/pexels-photo-8276637.jpeg" alt="Practical Learning" className="w-full h-full object-cover" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Practical Learning</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Comprehensive Study Materials</h3>
                 <p className="text-gray-600 dark:text-gray-300 text-center">
-                  Learn by doing real projects, not just reading theory
+                  Access detailed guides, practice exams, and video tutorials for all PMI certifications
                 </p>
               </div>
             </motion.div>
@@ -135,7 +136,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Community Support</h3>
                 <p className="text-gray-600 dark:text-gray-300 text-center">
-                  Join a vibrant community of learners and mentors
+                  Join a community of PMI certification aspirants for tips, discussions, and motivation
                 </p>
               </div>
             </motion.div>
@@ -146,7 +147,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Certification</h3>
                 <p className="text-gray-600 dark:text-gray-300 text-center">
-                  Earn recognized certificates upon course completion
+                  Prepare effectively for PMP, CAPM, PMI-ACP, and PfMP exams with our proven resources
                 </p>
               </div>
             </motion.div>
@@ -167,36 +168,36 @@ export default function Home() {
             </div>
 
             <p className="mt-8 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Our training is designed for anyone looking to build or enhance their project management skills
+              Our platform is designed for anyone preparing for PMI certifications, from beginners to experienced professionals looking to advance their careers.
             </p>
           </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <motion.div variants={item} className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-transparent dark:border-white/10">
               <div className="mx-auto w-full sm:w-auto max-w-xs rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#071a36] p-6 flex flex-col items-center gap-3">
                 <Target className="h-10 w-10 text-blue-600 mb-0" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Students</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Build practical skills to complement your academic knowledge</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Aspiring Project Managers</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Start your certification journey with PMP or CAPM preparation</p>
               </div>
             </motion.div>
             <motion.div variants={item} className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-transparent dark:border-white/10">
               <div className="mx-auto w-full sm:w-auto max-w-xs rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#071a36] p-6 flex flex-col items-center gap-3">
                 <Users className="h-10 w-10 text-green-600 dark:text-green-300 mb-0" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Young Professionals</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Advance your career with in-demand PM skills</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Experienced Professionals</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Advance your career with PMI-ACP or PfMP certifications</p>
               </div>
             </motion.div>
             <motion.div variants={item} className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-transparent dark:border-white/10">
               <div className="mx-auto w-full sm:w-auto max-w-xs rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#071a36] p-6 flex flex-col items-center gap-3">
                 <MessageSquare className="h-10 w-10 text-orange-600 dark:text-orange-300 mb-0" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">NGOs & Churches</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Manage projects and programs more effectively</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Career Switchers</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Transition into project management with comprehensive PMI prep</p>
               </div>
             </motion.div>
             <motion.div variants={item} className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow border border-transparent dark:border-white/10">
               <div className="mx-auto w-full sm:w-auto max-w-xs rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#071a36] p-6 flex flex-col items-center gap-3">
                 <Globe className="h-10 w-10 text-cyan-600 dark:text-cyan-300 mb-0" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Small Teams</h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Improve coordination and project delivery</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Consultants & Freelancers</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm text-center">Enhance your credentials with recognized PMI certifications</p>
               </div>
             </motion.div>
           </div>
@@ -225,9 +226,9 @@ export default function Home() {
                 <motion.div variants={item} className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">
                   1
                 </motion.div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Choose a Course</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Choose Your Certification</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Browse our catalog and select the course that matches your goals
+                  Select from PMP, CAPM, PMI-ACP, or PfMP based on your goals and experience
                 </p>
               </div>
             </motion.div>
@@ -236,9 +237,9 @@ export default function Home() {
                 <motion.div variants={item} className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">
                   2
                 </motion.div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Enroll & Pay</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Create Account & Pay</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Complete your enrollment with secure payment processing
+                  Sign up and pay our affordable fee for lifetime access to all study materials
                 </p>
               </div>
             </motion.div>
@@ -247,9 +248,9 @@ export default function Home() {
                 <motion.div variants={item} className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">
                   3
                 </motion.div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Join & Learn</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Materials & Study</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Access the WhatsApp community and attend live virtual sessions
+                  Get comprehensive guides, practice exams, videos, and join our community for support
                 </p>
               </div>
             </motion.div>
@@ -258,9 +259,9 @@ export default function Home() {
                 <motion.div variants={item} className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-4">
                   4
                 </motion.div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Get Certified</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Take Exam & Get Certified</h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Complete training and receive your professional certificate
+                  Schedule and pass your PMI exam with confidence using our preparation resources
                 </p>
               </div>
             </motion.div>
@@ -287,30 +288,30 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <CheckCircle className="h-12 w-12 mx-auto mb-3 text-blue-200" />
-              <h3 className="text-lg font-semibold mb-2">Certificate Included</h3>
+              <h3 className="text-lg font-semibold mb-2">Comprehensive Materials</h3>
               <p className="text-blue-100 text-sm">
-                Professional certification for every course
+                Everything you need: study guides, practice exams, and video tutorials
               </p>
             </div>
             <div className="text-center">
               <Target className="h-12 w-12 mx-auto mb-3 text-blue-200" />
-              <h3 className="text-lg font-semibold mb-2">Practical Learning</h3>
+              <h3 className="text-lg font-semibold mb-2">Exam-Focused Prep</h3>
               <p className="text-blue-100 text-sm">
-                Real projects, not just theory
+                Tailored resources to help you pass PMI certification exams
               </p>
             </div>
             <div className="text-center">
               <Clock className="h-12 w-12 mx-auto mb-3 text-blue-200" />
-              <h3 className="text-lg font-semibold mb-2">Guided Sessions</h3>
+              <h3 className="text-lg font-semibold mb-2">Lifetime Access</h3>
               <p className="text-blue-100 text-sm">
-                Live virtual training with expert instructors
+                Pay once and access all materials forever
               </p>
             </div>
             <div className="text-center">
               <Users className="h-12 w-12 mx-auto mb-3 text-blue-200" />
               <h3 className="text-lg font-semibold mb-2">Community Support</h3>
               <p className="text-blue-100 text-sm">
-                Connect with peers and mentors
+                Connect with fellow certification aspirants
               </p>
             </div>
           </div>
@@ -320,17 +321,17 @@ export default function Home() {
       <section className="py-16 sm:py-20 bg-gray-50 dark:bg-[#09122d] transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Ready to Start Your PM Journey?
+            Ready to Get PMI Certified?
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-            Join hundreds of students and professionals who are already learning with ProPM
+            Join thousands of professionals who have achieved their PMI certifications with ProPM
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/courses"
               className="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
             >
-              Explore Courses
+              Explore Certifications
             </Link>
             <Link
               to="/signup"

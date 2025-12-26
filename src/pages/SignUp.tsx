@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock } from 'lucide-react';
+import { User, Mail, Lock, Check, X } from 'lucide-react';
 import logo from '../assets/logo-light.png';
 import { useAuth } from '../context/AuthContext';
+
+// Common weak passwords to block
+const weakPasswords = [
+  '123456', 'password', '123456789', 'qwerty', 'abc123', 'password123', 'admin', 'letmein', 'welcome', 'monkey', '1234567890', 'iloveyou', 'princess', 'rockyou', '1234567', '12345678', 'sunshine', 'qwerty123', 'football', 'baseball', 'trustno1', 'jennifer', 'jordan', 'superman', 'michael', 'ninja', 'mustang', 'jessica', 'pepper', 'zaq1zaq1', 'qazwsx', 'test123', 'hello123', 'flower', 'shadow', 'master', 'dragon', 'passw0rd', '123qwe', '654321', 'qwertyuiop', '1q2w3e4r', 'google', 'facebook', 'linkedin', 'instagram', 'youtube', 'twitter', 'tiktok', 'snapchat'
+];
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -16,7 +21,15 @@ export default function SignUp() {
   const toastTimerRef = useRef<number | null>(null);
   const redirectTimerRef = useRef<number | null>(null);
   const navigate = useNavigate();
-  const { signUp: register, user, signInWithGoogle } = useAuth();
+  const { signUp: register, user } = useAuth();
+
+  // Password strength checks
+  const [passwordChecks, setPasswordChecks] = useState({
+    length: false,
+    lowercase: false,
+    number: false,
+    notWeak: false,
+  });
 
   useEffect(() => {
     if (user) {
@@ -35,6 +48,17 @@ export default function SignUp() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  // Update password checks in real-time
+  useEffect(() => {
+    const password = formData.password;
+    setPasswordChecks({
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      notWeak: !weakPasswords.includes(password.toLowerCase()),
+    });
+  }, [formData.password]);
+
   const showToast = (message: string, variant: 'success' | 'error') => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
     setToast({ message, variant });
@@ -44,6 +68,12 @@ export default function SignUp() {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       showToast('Passwords do not match!', 'error');
+      return;
+    }
+    // Check if all password requirements are met
+    const allChecks = Object.values(passwordChecks).every(check => check);
+    if (!allChecks) {
+      showToast('Password does not meet requirements!', 'error');
       return;
     }
     setLoading(true);
@@ -65,12 +95,6 @@ export default function SignUp() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleGoogleSignIn = () => {
-    signInWithGoogle().catch((err: any) => {
-      showToast(err?.message || 'Google sign-in failed', 'error');
-    });
   };
 
   return (
@@ -111,7 +135,7 @@ export default function SignUp() {
                     onChange={handleChange}
                     required
                     className="block w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-white/20 bg-white dark:bg-transparent text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500"
-                    placeholder="John Doe"
+                    placeholder="Your Full Name"
                   />
                 </div>
               </div>
@@ -157,7 +181,25 @@ export default function SignUp() {
                     placeholder="••••••••"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Must be at least 8 characters</p>
+                {/* Password strength indicator */}
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center text-xs">
+                    {passwordChecks.length ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <X className="h-4 w-4 text-red-500 mr-2" />}
+                    <span className={passwordChecks.length ? 'text-green-600' : 'text-red-600'}>At least 8 characters</span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    {passwordChecks.lowercase ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <X className="h-4 w-4 text-red-500 mr-2" />}
+                    <span className={passwordChecks.lowercase ? 'text-green-600' : 'text-red-600'}>One lowercase letter</span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    {passwordChecks.number ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <X className="h-4 w-4 text-red-500 mr-2" />}
+                    <span className={passwordChecks.number ? 'text-green-600' : 'text-red-600'}>One number</span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    {passwordChecks.notWeak ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <X className="h-4 w-4 text-red-500 mr-2" />}
+                    <span className={passwordChecks.notWeak ? 'text-green-600' : 'text-red-600'}>Not a common weak password</span>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -224,33 +266,6 @@ export default function SignUp() {
               </p>
             </div>
 
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-[#0f1e45] text-gray-500 dark:text-gray-300">Or sign up with</span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 gap-3">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  aria-label="Continue with Google"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-white/20 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg className="h-5 w-5" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M533.5 278.4c0-17.4-1.6-34-4.6-50.2H272v95.1h147.8c-6.4 34.9-25 64.5-53.7 84.3v70.1h86.8c50.8-46.8 82.6-115.8 82.6-199.3z" fill="#4285F4" />
-                    <path d="M272 544.3c72.6 0 133.6-23.9 178.1-64.9l-86.8-70.1c-24.1 16.3-55 26-91.3 26-70.3 0-129.9-47.4-151.3-111.2H32.6v69.8C77.1 486.2 169.6 544.3 272 544.3z" fill="#34A853" />
-                    <path d="M120.7 329.1c-10.9-32.8-10.9-68.3 0-101.1V158.2H32.6c-41.6 83.5-41.6 182.8 0 266.3l88.1-95.4z" fill="#FBBC04" />
-                    <path d="M272 109.6c39.5 0 75 13.6 103 40.5l77.4-77.4C405.2 24.5 345.6 0 272 0 169.6 0 77.1 58.1 32.6 158.2l88.1 69.8C142.1 157 201.7 109.6 272 109.6z" fill="#EA4335" />
-                  </svg>
-                  <span>Google</span>
-                </button>
-              </div>
-            </div>
           </div>
 
           <div className="mt-6 text-center">

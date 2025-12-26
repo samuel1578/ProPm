@@ -2,6 +2,12 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Target, Lightbulb, Heart, TrendingUp, Users, Award } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import { Pagination } from 'swiper/modules';
+import aboutHero from '../assets/about-hero.jpeg';
+import banner from '../assets/bannner.png';
 
 const headingVariant = {
   hidden: { opacity: 0, y: 40 },
@@ -41,9 +47,21 @@ export default function About() {
           >
             About ProPM
           </motion.h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
-            Empowering the next generation of project managers through practical, hands-on learning
-          </p>
+          <div className="flex flex-col items-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-2 inline-block px-3 py-1 border-2 border-dashed rounded-md border-gray-300 dark:border-white/30">
+              ProPM — Professional Project Management
+            </p>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl">
+              Guiding individuals to achieve PMI certifications through comprehensive, self-paced preparation
+            </p>
+          </div>
+          <motion.img
+            src={aboutHero}
+            alt="About ProPM"
+            className="mx-auto mt-8 w-full max-w-3xl rounded-lg shadow-lg object-cover"
+            variants={headingVariant}
+            {...headingMotionProps}
+          />
         </div>
       </section>
 
@@ -59,13 +77,16 @@ export default function About() {
                 The Problem We're Solving
               </motion.h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-                Many project management courses focus heavily on theory, leaving students and young professionals without the practical skills needed in the real world.
+                PMI certifications are highly valued but preparing for them can be overwhelming and expensive. Many aspirants struggle with finding reliable study materials, practice exams, and guidance.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-                Graduates often struggle to apply what they've learned because they've never actually managed a project from start to finish.
+                Without proper preparation, candidates often fail exams or spend months/years studying inefficiently.
               </p>
+              <div className="w-full flex justify-center my-6">
+                <img src={banner} alt="Problem banner" className="w-full max-w-3xl rounded-md shadow-sm object-cover" />
+              </div>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                This gap between academic knowledge and practical application creates barriers to career advancement and limits the effectiveness of teams and organizations.
+                This creates barriers to career advancement and limits opportunities for professionals worldwide.
               </p>
             </div>
             <motion.div
@@ -76,19 +97,19 @@ export default function About() {
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Too much theory, not enough practice</p>
+                  <p className="text-gray-700 dark:text-gray-200">High cost of PMI certification preparation</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">No real project experience</p>
+                  <p className="text-gray-700 dark:text-gray-200">Lack of comprehensive, up-to-date study materials</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Limited access to mentorship</p>
+                  <p className="text-gray-700 dark:text-gray-200">Difficulty finding reliable practice exams</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Difficulty applying classroom knowledge</p>
+                  <p className="text-gray-700 dark:text-gray-200">No structured guidance for exam preparation</p>
                 </div>
               </div>
             </motion.div>
@@ -107,23 +128,23 @@ export default function About() {
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Hands-on project simulations</p>
+                  <p className="text-gray-700 dark:text-gray-200">Comprehensive study guides for all PMI certifications</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Real-world scenarios and case studies</p>
+                  <p className="text-gray-700 dark:text-gray-200">Realistic practice exams and question banks</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Live sessions with experienced instructors</p>
+                  <p className="text-gray-700 dark:text-gray-200">Video tutorials and interactive learning modules</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Community learning and peer support</p>
+                  <p className="text-gray-700 dark:text-gray-200">Community forums and study groups for support</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <p className="text-gray-700 dark:text-gray-200">Professional certification upon completion</p>
+                  <p className="text-gray-700 dark:text-gray-200">Lifetime access with regular content updates</p>
                 </div>
               </div>
             </motion.div>
@@ -133,16 +154,16 @@ export default function About() {
                 variants={headingVariant}
                 {...headingMotionProps}
               >
-                Our Solution: Hands-On Learning
+                Our Solution: Comprehensive PMI Prep
               </motion.h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-                ProPM bridges this gap through a practical, project-based learning approach. We don't just teach you project management theory – we help you apply it.
+                ProPM provides everything you need to prepare for PMI certifications in one place. From detailed study guides to practice exams and video tutorials.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-                Our courses combine the best of online learning with community support, live instruction, and real project experience.
+                Our self-paced platform is designed to help you pass exams like PMP, CAPM, PMI-ACP, and PfMP with confidence.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-300">
-                By the time you complete a ProPM course, you'll have managed actual projects and developed the skills employers are looking for.
+                Pay once and get lifetime access to all materials, plus community support to keep you motivated.
               </p>
             </div>
           </div>
@@ -162,30 +183,34 @@ export default function About() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <motion.div
-              className="bg-blue-50 dark:bg-[#11254f] rounded-lg p-8 transition-colors"
+              className="bg-blue-50 dark:bg-[#11254f] rounded-lg p-8 text-center transition-colors"
               variants={cardVariant}
               {...cardMotionProps}
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg mb-4">
-                <Target className="h-6 w-6 text-white" />
+              <div className="space-y-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg mb-4 mx-auto">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Mission</h3>
+                <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
+                  To make PMI certification preparation accessible and effective for everyone, providing high-quality, affordable resources that help individuals pass their exams and advance their careers in project management.
+                </p>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Mission</h3>
-              <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
-                To equip students and young professionals with practical project management skills through hands-on training, enabling them to successfully plan, execute, and deliver projects in any setting.
-              </p>
             </motion.div>
             <motion.div
-              className="bg-green-50 dark:bg-[#0f382e] rounded-lg p-8 transition-colors"
+              className="bg-green-50 dark:bg-[#0f382e] rounded-lg p-8 text-center transition-colors"
               variants={cardVariant}
               {...cardMotionProps}
             >
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-green-600 rounded-lg mb-4">
-                <Lightbulb className="h-6 w-6 text-white" />
+              <div className="space-y-2">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-600 rounded-lg mb-4 mx-auto">
+                  <Lightbulb className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Vision</h3>
+                <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
+                  To become the go-to platform for PMI certification preparation worldwide, empowering professionals to achieve their certification goals and build successful careers in project management.
+                </p>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Vision</h3>
-              <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
-                To become the leading platform for practical project management education, creating a new generation of skilled project managers who drive success in organizations worldwide.
-              </p>
             </motion.div>
           </div>
         </div>
@@ -205,46 +230,66 @@ export default function About() {
               These principles guide everything we do at ProPM
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div
-              className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md text-center border border-transparent dark:border-white/10"
-              variants={cardVariant}
-              {...cardMotionProps}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Swiper
+              slidesPerView={1}
+              spaceBetween={16}
+              pagination={{ clickable: true }}
+              breakpoints={{
+                768: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+              }}
+              modules={[Pagination]}
+              className="py-8"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                <TrendingUp className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Excellence</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                We strive for the highest quality in our courses, support, and outcomes
-              </p>
-            </motion.div>
-            <motion.div
-              className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md text-center border border-transparent dark:border-white/10"
-              variants={cardVariant}
-              {...cardMotionProps}
-            >
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <Heart className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Student-First</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Your success is our success. We're committed to your learning journey
-              </p>
-            </motion.div>
-            <motion.div
-              className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md text-center border border-transparent dark:border-white/10"
-              variants={cardVariant}
-              {...cardMotionProps}
-            >
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
-                <Users className="h-8 w-8 text-orange-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Community</h3>
-              <p className="text-gray-600 dark:text-gray-300">
-                Learning together makes us stronger. We foster collaboration and support
-              </p>
-            </motion.div>
+              <SwiperSlide>
+                <motion.div
+                  className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md text-center border border-transparent dark:border-white/10"
+                  variants={cardVariant}
+                  {...cardMotionProps}
+                >
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4 mx-auto">
+                    <TrendingUp className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Accessibility</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Making PMI certification preparation affordable and accessible to professionals worldwide
+                  </p>
+                </motion.div>
+              </SwiperSlide>
+
+              <SwiperSlide>
+                <motion.div
+                  className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md text-center border border-transparent dark:border-white/10"
+                  variants={cardVariant}
+                  {...cardMotionProps}
+                >
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 mx-auto">
+                    <Heart className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Comprehensive Resources</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Providing everything you need in one place for effective PMI exam preparation
+                  </p>
+                </motion.div>
+              </SwiperSlide>
+
+              <SwiperSlide>
+                <motion.div
+                  className="bg-white dark:bg-[#111c3e] rounded-lg p-6 shadow-md text-center border border-transparent dark:border-white/10"
+                  variants={cardVariant}
+                  {...cardMotionProps}
+                >
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4 mx-auto">
+                    <Users className="h-8 w-8 text-orange-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Certification Success</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Focused on helping you pass PMI exams and achieve your certification goals
+                  </p>
+                </motion.div>
+              </SwiperSlide>
+            </Swiper>
           </div>
         </div>
       </section>
@@ -257,17 +302,17 @@ export default function About() {
             variants={headingVariant}
             {...headingMotionProps}
           >
-            Join Our Learning Community
+            Start Your PMI Certification Journey
           </motion.h2>
           <p className="text-lg text-blue-100 mb-8">
-            Start your journey to becoming a skilled project manager today
+            Join our community of successful PMI certification holders
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/courses"
               className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-lg dark:bg-transparent dark:text-white dark:border dark:border-white/40 dark:hover:bg-white/10"
             >
-              View Courses
+              View Certifications
             </Link>
             <Link
               to="/contact"

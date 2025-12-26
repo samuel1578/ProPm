@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Briefcase, FileText, Shield, Edit2, AlertCircle } from 'lucide-react';
+import { User, Briefcase, FileText, Shield, Edit2, AlertCircle, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile } from '../lib/appwrite';
+import { getUserProfile, getUserEnrollments } from '../lib/appwrite';
 import type { UserProfile as UserProfileType } from '../types/profile';
 
-const COUNTRIES = [
-    'Ghana',
-    'Nigeria',
-    'Kenya',
-    'United States',
-    'United Kingdom',
-];
+interface Enrollment {
+    $id: string;
+    userId: string;
+    planName: string;
+    planBasePrice: number;
+    currency: string;
+    certifications: string[];
+    status: string;
+    createdAt: string;
+}
 
 export default function UserProfile() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<UserProfileType | null>(null);
+    const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -40,6 +44,15 @@ export default function UserProfile() {
                 // If profile incomplete, redirect to onboarding
                 if (!profileData.profileCompleted) {
                     navigate('/profile/onboarding');
+                }
+
+                // Fetch user enrollments
+                try {
+                    const userEnrollments = await getUserEnrollments(user.$id);
+                    setEnrollments(userEnrollments);
+                } catch (enrollmentErr) {
+                    console.error('Failed to load enrollments', enrollmentErr);
+                    // Don't fail the whole page if enrollments fail to load
                 }
             } catch (err: any) {
                 console.error('Failed to load profile', err);
@@ -229,6 +242,79 @@ export default function UserProfile() {
                         </dd>
                     </div>
                 </dl>
+            </section>
+
+            {/* Section 5: My Enrollments */}
+            <section className="bg-white dark:bg-[#0b1b36] border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">My Enrollments</h2>
+                </div>
+                {enrollments.length === 0 ? (
+                    <div className="text-center py-8">
+                        <BookOpen className="w-12 h-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">No enrollments yet</p>
+                        <Link
+                            to="/pricing"
+                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all"
+                        >
+                            Browse Courses
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {enrollments.map((enrollment) => (
+                            <div key={enrollment.$id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                            {enrollment.planName}
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="font-medium text-gray-500 dark:text-gray-400">Price:</span>
+                                                <span className="ml-2 text-gray-900 dark:text-white">
+                                                    {enrollment.currency} {enrollment.planBasePrice.toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-500 dark:text-gray-400">Status:</span>
+                                                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${enrollment.status === 'completed'
+                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                    : enrollment.status === 'pending'
+                                                        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                                    }`}>
+                                                    {enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-500 dark:text-gray-400">Enrolled:</span>
+                                                <span className="ml-2 text-gray-900 dark:text-white">
+                                                    {new Date(enrollment.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                            {enrollment.certifications.length > 0 && (
+                                                <div className="md:col-span-2">
+                                                    <span className="font-medium text-gray-500 dark:text-gray-400">Certifications:</span>
+                                                    <div className="mt-1 flex flex-wrap gap-1">
+                                                        {enrollment.certifications.map((cert, index) => (
+                                                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                                                                {cert}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </section>
         </div>
     );

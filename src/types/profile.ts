@@ -34,5 +34,6 @@ export interface ProfileStepProps {
     onNext: () => void;
     onBack?: () => void;
     onSave: () => void;
+    onGoHome?: () => void;
     loading: boolean;
 }

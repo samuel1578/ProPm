@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ChevronRight } from 'lucide-react';
 import Confetti from 'react-confetti';
+import wall from '../assets/wall.jpeg';
 import { useAuth } from '../context/AuthContext';
 import { saveProfileProgress, completeProfile, getUserProfile } from '../lib/appwrite';
 import type { UserProfile } from '../types/profile';
@@ -83,6 +84,12 @@ export default function ProfileOnboarding() {
         try {
             await saveProfileProgress(user.$id, currentStep, formData);
             showToast('Progress saved ✓', 'success');
+            if (redirectTimerRef.current) {
+                window.clearTimeout(redirectTimerRef.current);
+            }
+            redirectTimerRef.current = window.setTimeout(() => {
+                navigate('/', { replace: true });
+            }, 1000);
         } catch (err: any) {
             showToast(err?.message || 'Failed to save progress', 'error');
         } finally {
@@ -160,7 +167,14 @@ export default function ProfileOnboarding() {
                     {toast.message}
                 </div>
             )}
-            <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div
+                className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4"
+                style={{
+                    backgroundImage: `linear-gradient(rgba(3,7,18,0.6), rgba(3,7,18,0.6)), url(${wall})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                }}
+            >
                 {showConfetti && <Confetti recycle={false} numberOfPieces={500} />}
 
                 <div className="bg-white dark:bg-[#0b1b36] rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
@@ -220,6 +234,7 @@ export default function ProfileOnboarding() {
                                 onChange={handleChange}
                                 onNext={handleNext}
                                 onSave={handleSave}
+                                onGoHome={() => navigate('/')}
                                 loading={loading}
                             />
                         )}

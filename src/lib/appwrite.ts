@@ -44,8 +44,17 @@ if (isAppwriteConfigured) {
 
 // Appwrite Database / Collection / Bucket IDs (set via env)
 const DATABASE_ID = (import.meta.env.VITE_APPWRITE_DATABASE_ID as string) || '';
-const PROFILE_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_PROFILE_COLLECTION_ID as string) || '';
+const PROFILE_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_PROFILE_COLLECTION_ID as string) || (import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID as string) || '';
+const ENROLLMENTS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID as string) || '';
 const BUCKET_ID = (import.meta.env.VITE_APPWRITE_BUCKET_ID as string) || '';
+
+if (!databases) {
+    throw new Error(APPWRITE_CONFIG_ERROR);
+}
+
+if (!DATABASE_ID || !PROFILE_COLLECTION_ID) {
+    throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and either VITE_APPWRITE_PROFILE_COLLECTION_ID or VITE_APPWRITE_USERS_COLLECTION_ID.');
+}
 
 export async function signUp(email: string, password: string, name?: string) {
     if (!account) {
@@ -267,6 +276,12 @@ export async function getCurrentUser() {
         const v = await verifyAccount();
         if (v.ok) return v.body;
 
+        // If REST fallback says 401, treat as unauthenticated instead of an exception.
+        if (v.status === 401) {
+            console.warn('getCurrentUser: unauthenticated (401) - returning null user.');
+            return null;
+        }
+
         const hdrs = JSON.stringify(v.headers, null, 2);
         const bodyText = typeof v.body === 'object' ? JSON.stringify(v.body) : String(v.body);
         const message = `account.get() failed and REST fallback returned status ${v.status}.\nHeaders:\n${hdrs}\nBody:\n${bodyText}`;
@@ -281,24 +296,6 @@ export async function signOut() {
         return;
     }
     return account.deleteSession('current');
-}
-
-export function signInWithGoogle() {
-    if (!account) {
-        return Promise.reject(new Error(APPWRITE_CONFIG_ERROR));
-    }
-    if (typeof window === 'undefined') {
-        return Promise.reject(new Error('Google sign-in must run in a browser context.'));
-    }
-
-    const success = `${window.location.origin}/oauth/success`;
-    const failure = `${window.location.origin}/oauth/failure`;
-
-    try {
-        return account.createOAuth2Session('google', success, failure);
-    } catch (err) {
-        return Promise.reject(err);
-    }
 }
 
 /**
@@ -348,7 +345,7 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
         throw new Error(APPWRITE_CONFIG_ERROR);
     }
     if (!DATABASE_ID || !PROFILE_COLLECTION_ID) {
-        throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_PROFILE_COLLECTION_ID.');
+        throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and either VITE_APPWRITE_PROFILE_COLLECTION_ID or VITE_APPWRITE_USERS_COLLECTION_ID.');
     }
 
     if (!data.userId) {
@@ -396,7 +393,7 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
         console.error('SDK saveUserProfile failed', sdkErr);
         // REST fallback to create/update document
         try {
-            const query = encodeURIComponent(`equal(\"userId\", \"${data.userId}\")`);
+            const query = encodeURIComponent(`equal("userId","${data.userId}")`);
             const listUrl = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${PROFILE_COLLECTION_ID}/documents?queries[]=${query}`;
             const listRes = await fetch(listUrl, {
                 method: 'GET',
@@ -462,7 +459,7 @@ export async function getUserProfile(userId: string) {
         throw new Error(APPWRITE_CONFIG_ERROR);
     }
     if (!DATABASE_ID || !PROFILE_COLLECTION_ID) {
-        throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_PROFILE_COLLECTION_ID.');
+        throw new Error('Profile collection not configured. Set VITE_APPWRITE_DATABASE_ID and either VITE_APPWRITE_PROFILE_COLLECTION_ID or VITE_APPWRITE_USERS_COLLECTION_ID.');
     }
 
     try {
@@ -472,7 +469,7 @@ export async function getUserProfile(userId: string) {
     } catch (sdkErr) {
         console.error('SDK getUserProfile failed', sdkErr);
         // REST fallback
-        const query = encodeURIComponent(`equal(\"userId\", \"${userId}\")`);
+        const query = encodeURIComponent(`equal("userId","${userId}")`);
         const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${PROFILE_COLLECTION_ID}/documents?queries[]=${query}`;
         const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
         const body = await res.json().catch(() => null);
@@ -512,6 +509,122 @@ export async function saveProfileProgress(userId: string, step: number, data: Pa
         updatedAt: new Date().toISOString()
     };
     return await saveUserProfile(payload);
+}
+
+/**
+ * Create an enrollment record for a user
+ */
+export async function createEnrollment(payload: {
+    userId: string;
+    planName: string;
+    planBasePrice: number;
+    currency?: string;
+    certifications?: string[];
+    status?: string;
+}) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !ENROLLMENTS_COLLECTION_ID) throw new Error('Enrollments collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID.');
+
+    const doc = {
+        userId: payload.userId,
+        planName: payload.planName,
+        planBasePrice: payload.planBasePrice,
+        currency: payload.currency || 'GHS',
+        certifications: payload.certifications || [],
+        status: payload.status || 'pending',
+        createdAt: new Date().toISOString(),
+    };
+
+    try {
+        const docId = typeof ID?.unique === 'function' ? ID.unique() : `enr-${Date.now()}`;
+        const permissions = [
+            Permission.read(Role.user(payload.userId)),
+            Permission.update(Role.user(payload.userId)),
+            Permission.delete(Role.user(payload.userId)),
+        ];
+
+        return await databases.createDocument(DATABASE_ID, ENROLLMENTS_COLLECTION_ID, docId, doc, permissions);
+    } catch (sdkErr) {
+        console.error('createEnrollment SDK failed', sdkErr);
+        // REST fallback
+        const createUrl = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${ENROLLMENTS_COLLECTION_ID}/documents`;
+        const res = await fetch(createUrl, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Appwrite-Project': projectId,
+            },
+            body: JSON.stringify({ documentId: typeof ID?.unique === 'function' ? ID.unique() : `enr-${Date.now()}`, data: doc, permissions: [Permission.read(Role.user(payload.userId)), Permission.update(Role.user(payload.userId)), Permission.delete(Role.user(payload.userId))] }),
+        });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `createEnrollment failed (${res.status})`);
+        return body;
+    }
+}
+
+export async function getUserEnrollments(userId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !ENROLLMENTS_COLLECTION_ID) throw new Error('Enrollments collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID.');
+
+    try {
+        const list = await databases.listDocuments(DATABASE_ID, ENROLLMENTS_COLLECTION_ID, [Query.equal('userId', userId)]);
+        return list.documents || [];
+    } catch (sdkErr) {
+        console.error('getUserEnrollments SDK failed', sdkErr);
+        // REST fallback
+        const query = encodeURIComponent(`equal(\"userId\", \"${userId}\")`);
+        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${ENROLLMENTS_COLLECTION_ID}/documents?queries[]=${query}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `getUserEnrollments failed (${res.status})`);
+        return body.documents || [];
+    }
+}
+
+/**
+ * Find a user's enrollment by plan name (used for duplicate guard)
+ */
+export async function findUserEnrollmentByCourse(userId: string, courseId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !ENROLLMENTS_COLLECTION_ID) throw new Error('Enrollments collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID.');
+
+    try {
+        const list = await databases.listDocuments(DATABASE_ID, ENROLLMENTS_COLLECTION_ID, [Query.equal('userId', userId), Query.equal('courseId', courseId)]);
+        return (list.documents && list.documents[0]) || null;
+    } catch (sdkErr) {
+        console.error('findUserEnrollmentByCourse SDK failed', sdkErr);
+        // REST fallback
+        const params = new URLSearchParams();
+        params.append('queries[]', `equal("userId","${userId}")`);
+        params.append('queries[]', `equal("courseId","${courseId}")`);
+        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${ENROLLMENTS_COLLECTION_ID}/documents?${params.toString()}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `findUserEnrollmentByCourse failed (${res.status})`);
+        return (body.documents && body.documents[0]) || null;
+    }
+}
+
+export async function findUserEnrollmentByPlan(userId: string, planName: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !ENROLLMENTS_COLLECTION_ID) throw new Error('Enrollments collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID.');
+
+    try {
+        const list = await databases.listDocuments(DATABASE_ID, ENROLLMENTS_COLLECTION_ID, [Query.equal('userId', userId), Query.equal('planName', planName)]);
+        return (list.documents && list.documents[0]) || null;
+    } catch (sdkErr) {
+        console.error('findUserEnrollmentByPlan SDK failed', sdkErr);
+        // REST fallback
+        const params = new URLSearchParams();
+        params.append('queries[]', `equal("userId","${userId}")`);
+        params.append('queries[]', `equal("planName","${planName}")`);
+        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${ENROLLMENTS_COLLECTION_ID}/documents?${params.toString()}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `findUserEnrollmentByPlan failed (${res.status})`);
+        return (body.documents && body.documents[0]) || null;
+    }
 }
 
 export async function completeProfile(userId: string, data: Record<string, any>) {

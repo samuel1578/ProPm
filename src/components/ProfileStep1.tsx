@@ -1,10 +1,10 @@
-import React from 'react';
+import { } from 'react';
 import { User } from 'lucide-react';
 import type { ProfileStepProps } from '../types/profile';
 
 const COUNTRIES = ['Ghana', 'Nigeria', 'Kenya', 'South Africa', 'United States', 'United Kingdom', 'Canada', 'India'];
 
-export default function ProfileStep1({ formData, onChange, onNext, onSave, loading }: ProfileStepProps) {
+export default function ProfileStep1({ formData, onChange, onNext, onSave, onGoHome, loading }: ProfileStepProps) {
     const handleNext = () => {
         if (!formData.displayName || !formData.email || !formData.homeCountry) {
             alert('Please fill in all required fields (Name, Email, Country)');
@@ -129,20 +129,31 @@ export default function ProfileStep1({ formData, onChange, onNext, onSave, loadi
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
-                <button
-                    onClick={onSave}
-                    disabled={loading}
-                    className="w-full sm:w-auto px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all disabled:opacity-50"
-                >
-                    Save Progress
-                </button>
-                <button
-                    onClick={handleNext}
-                    disabled={loading}
-                    className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50"
-                >
-                    Next: Professional Background →
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <button
+                        onClick={onSave}
+                        disabled={loading}
+                        className="w-full sm:w-auto px-6 py-2.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all disabled:opacity-50"
+                    >
+                        Save Progress
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        disabled={loading}
+                        className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50"
+                    >
+                        Next: Professional Background →
+                    </button>
+                </div>
+                <div className="w-full sm:w-auto">
+                    <button
+                        onClick={onGoHome}
+                        disabled={loading}
+                        className="w-full px-6 py-2 border border-transparent text-sm rounded-lg text-blue-700 bg-white dark:bg-transparent dark:text-white hover:bg-blue-50 dark:hover:bg-white/5 transition-all"
+                    >
+                        Go to Home
+                    </button>
+                </div>
             </div>
         </div>
     );

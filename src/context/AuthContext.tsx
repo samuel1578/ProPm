@@ -3,7 +3,6 @@ import type { Models } from 'appwrite';
 import {
     getCurrentUser,
     signIn as appwriteSignIn,
-    signInWithGoogle as appwriteSignInWithGoogle,
     signOut as appwriteSignOut,
     signUp as appwriteSignUp,
 } from '../lib/appwrite';
@@ -14,7 +13,6 @@ type AuthContextValue = {
     user: User;
     initializing: boolean;
     signIn: (email: string, password: string) => Promise<User>;
-    signInWithGoogle: () => Promise<void>;
     signUp: (email: string, password: string, name?: string) => Promise<User>;
     signOut: () => Promise<void>;
     refresh: () => Promise<User>;
@@ -90,19 +88,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     };
 
-    const signInWithGoogle = useCallback(() => {
-        return appwriteSignInWithGoogle();
-    }, []);
-
     const refresh = async () => {
-        const current = await getCurrentUser();
-        setUser(current);
-        return current;
+        try {
+            const current = await getCurrentUser();
+            setUser(current);
+            return current;
+        } catch (err) {
+            // Treat failures to refresh as unauthenticated rather than bubbling up errors.
+            console.warn('AuthContext.refresh failed, treating as unauthenticated', err);
+            setUser(null);
+            return null;
+        }
     };
 
     const value = useMemo<AuthContextValue>(
-        () => ({ user, initializing, signIn, signInWithGoogle, signUp, signOut, refresh }),
-        [user, initializing, signInWithGoogle]
+        () => ({ user, initializing, signIn, signUp, signOut, refresh }),
+        [user, initializing]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

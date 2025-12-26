@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, MessageSquare, HelpCircle, Send } from 'lucide-react';
+import contactImg from '../assets/contact.png';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -64,6 +65,7 @@ export default function Contact() {
           <p className="text-xl text-gray-600 dark:text-gray-300">
             Have questions? We're here to help. Reach out to us anytime.
           </p>
+          <img src={contactImg} alt="Contact" className="mx-auto mt-6 w-full max-w-md rounded-lg shadow-lg object-cover" />
         </div>
       </section>
 
