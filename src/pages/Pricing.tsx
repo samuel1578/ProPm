@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Check, Star, Award } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import CurrencyConverter from '../components/CurrencyConverter';
@@ -39,6 +39,21 @@ export default function Pricing() {
     setCurrentCurrency(currency);
     setExchangeRate(rate);
   };
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!location) return;
+    if (location.pathname === '/pricing' && location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      const headerHeight = document.querySelector('header')?.clientHeight || 0;
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+      }
+    }
+  }, [location]);
 
   useEffect(() => {
     let mounted = true;
@@ -83,7 +98,7 @@ export default function Pricing() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-20 bg-white dark:bg-[#0b1535] transition-colors">
+      <section id="plans" className="py-16 sm:py-20 bg-white dark:bg-[#0b1535] transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <CurrencyConverter onCurrencyChange={handleCurrencyChange} />
 

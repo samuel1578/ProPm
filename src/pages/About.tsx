@@ -315,7 +315,7 @@ export default function About() {
               View Certifications
             </Link>
             <Link
-              to="/contact"
+              to="/contact#contact-top"
               className="px-8 py-4 bg-blue-700 text-white font-semibold rounded-lg border-2 border-white hover:bg-blue-800 transition-colors dark:bg-transparent dark:border-white/60 dark:hover:bg-white/10"
             >
               Contact Us

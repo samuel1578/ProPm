@@ -1,8 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Mail, Phone, MapPin, MessageSquare, HelpCircle, Send } from 'lucide-react';
 import contactImg from '../assets/contact.png';
 
+function ScrollHandler() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // if hash present, scroll to it; otherwise scroll to top
+    if (location && location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        // small timeout to allow DOM to be ready
+        setTimeout(() => el.scrollIntoView({ behavior: 'auto', block: 'start' }), 40);
+        return;
+      }
+    }
+
+    // no hash -> scroll to top of contact page
+    if (location && location.pathname === '/contact') {
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'auto' }), 40);
+    }
+  }, [location]);
+
+  return null;
+}
+
 export default function Contact() {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,7 +83,7 @@ export default function Contact() {
 
   return (
     <div className="bg-white dark:bg-[#071330]">
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
+      <section id="contact-top" className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">
             Get in Touch
@@ -68,6 +94,9 @@ export default function Contact() {
           <img src={contactImg} alt="Contact" className="mx-auto mt-6 w-full max-w-md rounded-lg shadow-lg object-cover" />
         </div>
       </section>
+
+      {/* Scroll to hash (e.g. /contact#contact-top) or top on navigation */}
+      <ScrollHandler />
 
       <section className="py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

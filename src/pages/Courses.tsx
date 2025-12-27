@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Clock, Award, Users, MessageSquare, CheckCircle, ChevronDown } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
@@ -104,6 +104,7 @@ const certifications: Certification[] = [
 
 export default function Courses() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(1);
   const [swiperInstance, setSwiperInstance] = useState<any>(null);
@@ -156,6 +157,33 @@ export default function Courses() {
 
     return () => { mounted = false; };
   }, [user]);
+
+  // Scroll behavior when navigating to /courses: if a hash is present, scroll to that target; otherwise
+  // scroll the hero into view with an offset to account for the fixed header so the hero isn't hidden.
+  useEffect(() => {
+    const headerHeight = document.querySelector('header')?.clientHeight || 0;
+
+    if (location && location.hash) {
+      const id = location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      }
+      return;
+    }
+
+    // No hash: if we're on /courses, scroll the hero into view with offset
+    if (location && location.pathname === '/courses') {
+      const hero = document.getElementById('courses-hero');
+      if (hero) {
+        const top = hero.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      } else {
+        // fallback to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  }, [location]);
 
   async function fetchEnrollments() {
     if (!user) return;
@@ -257,7 +285,7 @@ export default function Courses() {
 
   return (
     <div className="bg-white dark:bg-[#071330]">
-      <section className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
+      <section id="courses-hero" className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Master PMI Certifications
@@ -279,7 +307,7 @@ export default function Courses() {
 
       {/* features grid removed from top and relocated below the courses swiper */}
 
-      <section className="py-16 sm:py-20">
+      <section id="certifications" className="py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-4 text-center">
             <div className="mt-3 flex items-center justify-center">
@@ -428,7 +456,7 @@ export default function Courses() {
                         <button className="w-full px-4 py-2 text-blue-600 dark:text-blue-300 text-sm font-medium border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
                           Learn More
                         </button>
-                        <Link to="/pricing" className="w-full px-4 py-2 text-sm bg-gray-50 dark:bg-[#071330] rounded-lg text-center">View Pricing</Link>
+                        <Link to="/pricing#plans" className="w-full px-4 py-2 text-sm bg-gray-50 dark:bg-[#071330] rounded-lg text-center">View Pricing</Link>
                       </div>
                     </div>
                   </div>
@@ -544,7 +572,7 @@ export default function Courses() {
               Get Certification Advice
             </Link>
             <Link
-              to="/pricing"
+              to="/pricing#plans"
               className="px-8 py-4 bg-white dark:bg-transparent text-blue-600 dark:text-blue-300 font-semibold rounded-lg border-2 border-blue-600 dark:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
             >
               View Pricing

@@ -4,6 +4,7 @@ import { Mail, Lock } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import lightLogo from '../assets/logo-light.png';
 import darkLogo from '../assets/logo-dark.png';
+import wall from '../assets/wall.jpeg';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -14,6 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { darkMode } = useTheme();
   const logo = darkMode ? darkLogo : lightLogo;
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : false);
   const { signIn: authenticate, user, initializing } = useAuth();
   const navigate = useNavigate();
   const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
@@ -36,6 +38,14 @@ export default function Login() {
   }, [toast]);
 
   useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    try {
+      mq.addEventListener?.('change', handler);
+    } catch (e) {
+      mq.addListener?.(handler as any);
+    }
+
     return () => {
       if (toastTimerRef.current) {
         window.clearTimeout(toastTimerRef.current);
@@ -43,6 +53,7 @@ export default function Login() {
       if (redirectTimerRef.current) {
         window.clearTimeout(redirectTimerRef.current);
       }
+      try { mq.removeEventListener?.('change', handler); } catch (e) { mq.removeListener?.(handler as any); }
     };
   }, []);
 
@@ -77,9 +88,22 @@ export default function Login() {
           {toast.message}
         </div>
       )}
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div
+        className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+        style={
+          isDesktop
+            ? {
+              backgroundImage: `linear-gradient(rgba(8,10,19,0.35), rgba(8,10,19,0.35)), url(${wall})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center center',
+              backgroundSize: 'cover',
+              backgroundAttachment: 'fixed',
+            }
+            : undefined
+        }
+      >
         <div className="max-w-md w-full">
-          <div className="bg-white dark:bg-[#080B13] border border-gray-100 dark:border-[#080B13] rounded-lg shadow-xl shadow-blue-500/10 p-8">
+          <div className="bg-white dark:bg-[#080A13] border border-gray-100 dark:border-[#080A13] rounded-lg shadow-xl shadow-blue-500/10 p-8">
             <div className="text-center mb-8">
               <Link to="/" className="inline-flex items-center justify-center space-x-2 mb-4">
                 <img src={logo} alt="ProPM" className="site-logo w-auto object-contain" />

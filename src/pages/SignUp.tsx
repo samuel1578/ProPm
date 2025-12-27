@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Check, X } from 'lucide-react';
 import logo from '../assets/logo-light.png';
+import darkLogo from '../assets/logo-dark.png';
+import wall from '../assets/wall.jpeg';
+import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
 // Common weak passwords to block
@@ -10,6 +13,23 @@ const weakPasswords = [
 ];
 
 export default function SignUp() {
+  const { darkMode } = useTheme();
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    try {
+      // addEventListener for newer browsers
+      mq.addEventListener?.('change', handler);
+    } catch (e) {
+      // fallback
+      mq.addListener?.(handler as any);
+    }
+    return () => {
+      try { mq.removeEventListener?.('change', handler); } catch (e) { mq.removeListener?.(handler as any); }
+    };
+  }, []);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -107,12 +127,27 @@ export default function SignUp() {
           {toast.message}
         </div>
       )}
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-[#09122d] dark:to-[#040815] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+      <div
+        className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-[#09122d] dark:to-[#040815] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors"
+        style={
+          isDesktop
+            ? {
+              backgroundImage: `linear-gradient(rgba(8,10,19,0.35), rgba(8,10,19,0.35)), url(${wall})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center center',
+              backgroundSize: 'cover',
+              backgroundAttachment: 'fixed',
+            }
+            : undefined
+        }
+      >
         <div className="max-w-md w-full">
-          <div className="bg-white dark:bg-[#0f1e45] rounded-lg shadow-xl p-8 border border-transparent dark:border-white/10 transition-colors">
+          <div className="bg-white dark:bg-[#080A13] rounded-lg shadow-xl p-8 border border-transparent dark:border-white/10 transition-colors">
             <div className="text-center mb-8">
               <Link to="/" className="inline-flex items-center justify-center space-x-2 mb-4">
-                <img src={logo} alt="ProPM" className="site-logo w-auto object-contain" />
+                {/* Mobile: always show light logo (keeps contrast); Desktop: show dark variant when in dark mode */}
+                <img src={logo} alt="ProPM" className="site-logo w-auto object-contain md:hidden" />
+                <img src={useTheme().darkMode ? darkLogo : logo} alt="ProPM" className="site-logo hidden md:block w-auto object-contain" />
               </Link>
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create Your Account</h2>
               <p className="text-gray-600 dark:text-gray-300">Start your PM learning journey today</p>
