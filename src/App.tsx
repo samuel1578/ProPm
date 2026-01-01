@@ -12,6 +12,8 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import UserProfile from './pages/UserProfile';
 import ProfileOnboarding from './pages/ProfileOnboarding';
+import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -69,6 +71,22 @@ function App() {
                 element={
                   <Layout>
                     <UserProfile />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <Layout>
+                    <AdminDashboard />
                   </Layout>
                 }
               />

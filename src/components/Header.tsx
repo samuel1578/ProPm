@@ -4,6 +4,7 @@ import { Sun, Moon, ChevronDown, User as UserIcon, LogOut, BookOpen, X } from 'l
 import { Dialog, Transition } from '@headlessui/react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { getUserProfile } from '../lib/appwrite';
 import lightLogo from '../assets/logo-light.png';
 import darkLogo from '../assets/logo-dark.png';
 import MobileMenu from './MobileMenu';
@@ -23,6 +24,8 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showPortalModal, setShowPortalModal] = useState(false);
+  const [profileCompleted, setProfileCompleted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { user, signOut, initializing } = useAuth();
 
   const fullName = user?.name?.trim() || user?.email?.split('@')[0] || '';
@@ -44,6 +47,33 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (user?.$id) {
+      // Check if user is admin (based on Appwrite labels or prefs)
+      const adminCheck = user?.labels?.includes('admin') || user?.prefs?.role === 'admin';
+      console.log('Admin check in Header:', {
+        userId: user.$id,
+        labels: user?.labels,
+        prefs: user?.prefs,
+        adminCheck
+      });
+      setIsAdmin(adminCheck);
+
+      getUserProfile(user.$id)
+        .then(res => {
+          if (res?.document) {
+            setProfileCompleted(res.document.profileCompleted || false);
+            // Check if profile has isAdmin flag
+            if (res.document.isAdmin === true) {
+              console.log('User is admin from profile');
+              setIsAdmin(true);
+            }
+          }
+        })
+        .catch(err => console.error('Failed to load profile status', err));
+    }
+  }, [user]);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -116,11 +146,21 @@ export default function Header() {
                 {showDropdown && (
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0b1b36] border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl py-2 z-50">
                     <Link
-                      to="/userprofile"
+                      to={isAdmin ? "/admin" : "/dashboard"}
+                      onClick={() => setShowDropdown(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#0d2244] transition-colors"
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      <span>{isAdmin ? "Admin Dashboard" : "Dashboard"}</span>
+                    </Link>
+
+                    <Link
+                      to={profileCompleted ? "/userprofile" : "/profile/onboarding"}
+                      onClick={() => setShowDropdown(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#0d2244] transition-colors"
                     >
                       <UserIcon className="w-4 h-4" />
-                      <span>Edit Your Profile</span>
+                      <span>{profileCompleted ? "View Profile" : "Edit Profile"}</span>
                     </Link>
                     <button
                       onClick={handleSignOut}

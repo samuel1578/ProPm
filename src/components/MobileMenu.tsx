@@ -1,10 +1,11 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { motion } from 'framer-motion';
 import { Menu, X, Moon, Sun, User as UserIcon, LogOut, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { getUserProfile } from '../lib/appwrite';
 
 interface NavItem {
     name: string;
@@ -14,6 +15,8 @@ interface NavItem {
 export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; logo?: string }) {
     const [open, setOpen] = useState(false);
     const [showPortalModal, setShowPortalModal] = useState(false);
+    const [profileCompleted, setProfileCompleted] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const { darkMode, setDarkMode } = useTheme();
     const { user, signOut } = useAuth();
 
@@ -25,6 +28,33 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
     const fullName = user?.name?.trim() || user?.email?.split('@')[0] || '';
     const firstName = fullName ? fullName.split(' ')[0] : '';
     const avatarInitial = firstName ? firstName.charAt(0).toUpperCase() : user?.email?.charAt(0)?.toUpperCase() || '?';
+
+    useEffect(() => {
+        if (user?.$id) {
+            // Check if user is admin (based on Appwrite labels or prefs)
+            const adminCheck = user?.labels?.includes('admin') || user?.prefs?.role === 'admin';
+            console.log('Admin check in MobileMenu:', {
+                userId: user.$id,
+                labels: user?.labels,
+                prefs: user?.prefs,
+                adminCheck
+            });
+            setIsAdmin(adminCheck);
+
+            getUserProfile(user.$id)
+                .then(res => {
+                    if (res?.document) {
+                        setProfileCompleted(res.document.profileCompleted || false);
+                        // Check if profile has isAdmin flag
+                        if (res.document.isAdmin === true) {
+                            console.log('User is admin from profile');
+                            setIsAdmin(true);
+                        }
+                    }
+                })
+                .catch(err => console.error('Failed to load profile status', err));
+        }
+    }, [user]);
 
     const handleSignOut = async () => {
         try {
@@ -103,13 +133,23 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
                                                 </div>
                                                 <div className={`flex gap-2 px-3 pb-3 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
                                                     <Link
-                                                        to="/profile/onboarding"
+                                                        to={isAdmin ? "/admin" : "/dashboard"}
+                                                        onClick={() => setOpen(false)}
+                                                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${darkMode ? 'bg-white/10 hover:bg-white/15 text-white' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
+                                                            }`}
+                                                    >
+                                                        <BookOpen className="w-4 h-4" />
+                                                        {isAdmin ? "Admin" : "Dashboard"}
+                                                    </Link>
+
+                                                    <Link
+                                                        to={profileCompleted ? "/userprofile" : "/profile/onboarding"}
                                                         onClick={() => setOpen(false)}
                                                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${darkMode ? 'bg-white/10 hover:bg-white/15 text-white' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
                                                             }`}
                                                     >
                                                         <UserIcon className="w-4 h-4" />
-                                                        Edit Profile
+                                                        {profileCompleted ? "View Profile" : "Edit Profile"}
                                                     </Link>
                                                     <button
                                                         onClick={handleSignOut}

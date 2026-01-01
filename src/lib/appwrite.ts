@@ -46,6 +46,9 @@ if (isAppwriteConfigured) {
 const DATABASE_ID = (import.meta.env.VITE_APPWRITE_DATABASE_ID as string) || '';
 const PROFILE_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_PROFILE_COLLECTION_ID as string) || (import.meta.env.VITE_APPWRITE_USERS_COLLECTION_ID as string) || '';
 const ENROLLMENTS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID as string) || '';
+const KNOWLEDGE_AREAS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_KNOWLEDGE_AREAS_COLLECTION_ID as string) || '';
+const LIVE_SESSIONS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_LIVE_SESSIONS_COLLECTION_ID as string) || '';
+const ACTIVITIES_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_ACTIVITIES_COLLECTION_ID as string) || '';
 const BUCKET_ID = (import.meta.env.VITE_APPWRITE_BUCKET_ID as string) || '';
 
 if (!databases) {
@@ -364,6 +367,30 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
     data.profileCompleted = data.profileCompleted ?? false;
     data.currentStep = data.currentStep ?? 1;
 
+    // Sanitize document for Appwrite (remove unknown attrs, ensure types)
+    const sanitizeForAppwrite = (doc: Record<string, any>) => {
+        const payload: Record<string, any> = { ...doc };
+        // Appwrite manages timestamps as $createdAt / $updatedAt — don't send createdAt
+        if (payload.createdAt !== undefined) delete payload.createdAt;
+
+        // Ensure certifications is an array of strings when present
+        if (payload.certifications != null) {
+            if (Array.isArray(payload.certifications)) {
+                payload.certifications = payload.certifications.map((v: any) => String(v));
+            } else {
+                const str = String(payload.certifications || '');
+                payload.certifications = str
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+            }
+        }
+
+        return payload;
+    };
+
+    const sanitizedData = sanitizeForAppwrite(data);
+
     try {
         const list = await databases.listDocuments(
             DATABASE_ID,
@@ -372,7 +399,7 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
         );
 
         if (list.documents.length > 0) {
-            return await databases.updateDocument(DATABASE_ID, PROFILE_COLLECTION_ID, list.documents[0].$id, data);
+            return await databases.updateDocument(DATABASE_ID, PROFILE_COLLECTION_ID, list.documents[0].$id, sanitizedData);
         }
 
         const docId = typeof ID?.unique === 'function' ? ID.unique() : `prof-${Date.now()}`;
@@ -386,7 +413,7 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
             DATABASE_ID,
             PROFILE_COLLECTION_ID,
             docId,
-            data,
+            sanitizedData,
             permissions
         );
     } catch (sdkErr) {
@@ -419,7 +446,7 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
                         'Content-Type': 'application/json',
                         'X-Appwrite-Project': projectId,
                     },
-                    body: JSON.stringify({ data }),
+                    body: JSON.stringify({ data: sanitizedData }),
                 });
                 const updateBody = await updateRes.json().catch(() => null);
                 if (!updateRes.ok) throw new Error(updateBody?.message || `saveUserProfile update failed (${updateRes.status})`);
@@ -436,7 +463,7 @@ export async function saveUserProfile(data: Record<string, any>, file?: File) {
                 },
                 body: JSON.stringify({
                     documentId: typeof ID?.unique === 'function' ? ID.unique() : `prof-${Date.now()}`,
-                    data,
+                    data: sanitizedData,
                     permissions: [
                         Permission.read(Role.user(data.userId)),
                         Permission.update(Role.user(data.userId)),
@@ -525,14 +552,21 @@ export async function createEnrollment(payload: {
     if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
     if (!DATABASE_ID || !ENROLLMENTS_COLLECTION_ID) throw new Error('Enrollments collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_ENROLLMENTS_COLLECTION_ID.');
 
+    // Normalize certifications to an array of strings
+    const certifications = ((): string[] => {
+        if (payload.certifications == null) return [];
+        if (Array.isArray(payload.certifications)) return payload.certifications.map((v: any) => String(v));
+        const str = String(payload.certifications || '');
+        return str.split(',').map(s => s.trim()).filter(Boolean);
+    })();
+
     const doc = {
         userId: payload.userId,
         planName: payload.planName,
         planBasePrice: payload.planBasePrice,
         currency: payload.currency || 'GHS',
-        certifications: payload.certifications || [],
+        certifications,
         status: payload.status || 'pending',
-        createdAt: new Date().toISOString(),
     };
 
     try {
@@ -578,6 +612,68 @@ export async function getUserEnrollments(userId: string) {
         const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
         const body = await res.json().catch(() => null);
         if (!res.ok) throw new Error(body?.message || `getUserEnrollments failed (${res.status})`);
+        return body.documents || [];
+    }
+}
+
+export async function getKnowledgeAreasByEnrollment(enrollmentId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !KNOWLEDGE_AREAS_COLLECTION_ID) throw new Error('Knowledge areas collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_KNOWLEDGE_AREAS_COLLECTION_ID.');
+
+    try {
+        const list = await databases.listDocuments(DATABASE_ID, KNOWLEDGE_AREAS_COLLECTION_ID, [Query.equal('enrollmentId', enrollmentId)]);
+        return list.documents || [];
+    } catch (sdkErr) {
+        console.error('getKnowledgeAreasByEnrollment SDK failed', sdkErr);
+        // REST fallback
+        const params = new URLSearchParams();
+        params.append('queries[]', `equal("enrollmentId","${enrollmentId}")`);
+        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${KNOWLEDGE_AREAS_COLLECTION_ID}/documents?${params.toString()}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `getKnowledgeAreasByEnrollment failed (${res.status})`);
+        return body.documents || [];
+    }
+}
+
+export async function getLiveSessionsForCertification(certification: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !LIVE_SESSIONS_COLLECTION_ID) throw new Error('Live sessions collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_LIVE_SESSIONS_COLLECTION_ID.');
+
+    try {
+        const now = new Date().toISOString();
+        const list = await databases.listDocuments(DATABASE_ID, LIVE_SESSIONS_COLLECTION_ID, [Query.equal('certification', certification), Query.greaterThan('startAt', now)]);
+        return list.documents || [];
+    } catch (sdkErr) {
+        console.error('getLiveSessionsForCertification SDK failed', sdkErr);
+        const params = new URLSearchParams();
+        params.append('queries[]', `equal("certification","${certification}")`);
+        params.append('queries[]', `greaterThan("startAt","${new Date().toISOString()}")`);
+        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${LIVE_SESSIONS_COLLECTION_ID}/documents?${params.toString()}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `getLiveSessionsForCertification failed (${res.status})`);
+        return body.documents || [];
+    }
+}
+
+export async function getRecentActivitiesForUser(userId: string, limit = 20) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !ACTIVITIES_COLLECTION_ID) throw new Error('Activities collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_ACTIVITIES_COLLECTION_ID.');
+
+    try {
+        const list = await databases.listDocuments(DATABASE_ID, ACTIVITIES_COLLECTION_ID, [Query.equal('userId', userId), Query.orderDesc('occurredAt'), Query.limit(limit)]);
+        return list.documents || [];
+    } catch (sdkErr) {
+        console.error('getRecentActivitiesForUser SDK failed', sdkErr);
+        const params = new URLSearchParams();
+        params.append('queries[]', `equal("userId","${userId}")`);
+        params.append('queries[]', `orderDesc("occurredAt")`);
+        params.append('limit', String(limit));
+        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/databases/${DATABASE_ID}/collections/${ACTIVITIES_COLLECTION_ID}/documents?${params.toString()}`;
+        const res = await fetch(url, { method: 'GET', credentials: 'include', headers: { 'X-Appwrite-Project': projectId } });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(body?.message || `getRecentActivitiesForUser failed (${res.status})`);
         return body.documents || [];
     }
 }

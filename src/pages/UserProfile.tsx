@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Briefcase, FileText, Shield, Edit2, AlertCircle, BookOpen } from 'lucide-react';
+import { User, Briefcase, FileText, Shield, Edit2, AlertCircle, BookOpen, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile, getUserEnrollments } from '../lib/appwrite';
 import type { UserProfile as UserProfileType } from '../types/profile';
@@ -76,6 +76,18 @@ export default function UserProfile() {
 
     return (
         <div className="max-w-5xl mx-auto p-6 space-y-6">
+            {/* Breadcrumb Navigation */}
+            <nav className="flex items-center gap-2 text-sm mb-4" aria-label="Breadcrumb">
+                <Link
+                    to="/"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+                >
+                    Dashboard
+                </Link>
+                <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <span className="text-gray-700 dark:text-gray-300 font-medium">My Profile</span>
+            </nav>
+
             <header className="mb-8">
                 <div className="flex items-center justify-between">
                     <div>
