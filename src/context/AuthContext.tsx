@@ -58,21 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signIn = async (email: string, password: string) => {
         await appwriteSignIn(email, password);
 
-        // Perform a credentialed REST check to capture response headers (useful for debugging cookie/CORS issues)
-        try {
-            const verification: any = await (await import('../lib/appwrite')).verifyAccount();
-            if (!verification.ok) {
-                const hdrs = JSON.stringify(verification.headers, null, 2);
-                const bodyText = typeof verification.body === 'object' ? JSON.stringify(verification.body) : String(verification.body);
-                throw new Error(
-                    `Sign in succeeded but fetching the user failed. Status: ${verification.status}.\nHeaders:\n${hdrs}\nBody:\n${bodyText}\nCheck Appwrite platform origin and "Allow Credentials" for your origin, and ensure cookies are allowed (Secure/HTTPS).`
-                );
-            }
-            setUser(verification.body as any);
-            return verification.body as any;
-        } catch (err) {
-            throw err;
-        }
+        // Get the current user after successful sign-in
+        const current = await getCurrentUser();
+        setUser(current);
+        return current;
     };
 
     const signUp = async (email: string, password: string, name?: string) => {
