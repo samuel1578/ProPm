@@ -21,9 +21,14 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
     const { user, signOut } = useAuth();
 
     const itemVariants = {
-        hidden: { opacity: 0, x: 12 },
-        visible: (i: number) => ({ opacity: 1, x: 0, transition: { delay: 0.06 * i, type: 'spring' as const, stiffness: 120 } }),
+        hidden: { opacity: 0, x: 16 },
+        visible: (i: number) => ({
+            opacity: 1,
+            x: 0,
+            transition: { delay: 0.05 * i, duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+        }),
     };
+    const MotionLink = motion(Link);
 
     const fullName = user?.name?.trim() || user?.email?.split('@')[0] || '';
     const firstName = fullName ? fullName.split(' ')[0] : '';
@@ -83,138 +88,178 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
                 <Dialog as="div" className="fixed inset-0 z-50" onClose={setOpen}>
                     <Transition.Child
                         as={Fragment}
-                        enter="ease-out duration-300"
+                        enter="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-300"
                         enterFrom="opacity-0"
                         enterTo="opacity-100"
-                        leave="ease-in duration-200"
+                        leave="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-200"
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
-                        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+                        <div className="fixed inset-0 bg-black/55 backdrop-blur-md" aria-hidden="true" />
                     </Transition.Child>
 
                     <div className="fixed inset-0 overflow-y-auto">
                         <div className="flex min-h-full items-start justify-end">
                             <Transition.Child
                                 as={Fragment}
-                                enter="transform transition ease-in-out duration-350"
+                                enter="transition-transform ease-[cubic-bezier(0.4,0,0.2,1)] duration-300"
                                 enterFrom="translate-x-full"
                                 enterTo="translate-x-0"
-                                leave="transform transition ease-in-out duration-250"
+                                leave="transition-transform ease-[cubic-bezier(0.4,0,0.2,1)] duration-250"
                                 leaveFrom="translate-x-0"
                                 leaveTo="translate-x-full"
                             >
-                                <Dialog.Panel className={`w-full max-w-full sm:max-w-sm h-screen sm:h-full shadow-xl transition-colors duration-300 ${darkMode ? 'bg-[#050b1a]' : 'bg-white'}`}>
-                                    <div className="p-5 h-full flex flex-col">
-                                        <div className="relative mb-6 flex items-center justify-center">
-                                            {logo ? <img src={logo} alt="Logo" className="h-14 w-auto transition-all" /> : <div className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>Brand</div>}
-
-                                            <div className="absolute right-0 top-0">
-                                                <button onClick={() => setOpen(false)} aria-label="Close menu" className={`p-2 rounded-md ${darkMode ? 'hover:bg-[#0d1f3b]' : 'hover:bg-gray-100'}`}>
-                                                    <X className={`w-6 h-6 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
-                                                </button>
+                                <Dialog.Panel className={`w-full max-w-full sm:max-w-sm h-screen flex flex-col shadow-xl transition-colors duration-300 ${darkMode ? 'bg-[#050b1a]' : 'bg-white'}`}>
+                                    <div className="flex-1 overflow-y-auto">
+                                        {/* Header - Fixed at top */}
+                                        <div className={`sticky top-0 z-10 p-5 mb-4 ${darkMode ? 'bg-[#050b1a]' : 'bg-white'}`}>
+                                            <div className="relative flex items-center justify-center">
+                                                {logo ? <img src={logo} alt="Logo" className="h-12 w-auto transition-all" /> : <div className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>Brand</div>}
+                                                <div className="absolute right-0 top-0">
+                                                    <button onClick={() => setOpen(false)} aria-label="Close menu" className={`p-2 rounded-md ${darkMode ? 'hover:bg-[#0d1f3b]' : 'hover:bg-gray-100'}`}>
+                                                        <X className={`w-6 h-6 ${darkMode ? 'text-white' : 'text-gray-900'}`} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
 
-
-                                        {user && (
-                                            <div className={`mb-6 rounded-2xl border shadow-sm ${darkMode ? 'border-white/15 bg-white/5 text-white' : 'border-slate-200 bg-white text-gray-900'}`}>
-                                                <div className="px-4 py-3">
-                                                    <div className="flex flex-col items-center text-center mb-3">
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-sky-500 to-indigo-600 text-lg font-semibold text-white shadow-lg mb-2">
-                                                            {avatarInitial}
+                                        {/* Scrollable Content */}
+                                        <div className="px-5 pb-6 space-y-8">
+                                            {user ? (
+                                                <section className={`relative overflow-hidden rounded-3xl border ${darkMode ? 'border-white/10 bg-gradient-to-br from-[#162850] via-[#0b1730] to-[#050b1a] text-white' : 'border-slate-200 bg-gradient-to-br from-white via-white to-blue-50 text-gray-900'}`}>
+                                                    <div className="absolute inset-0 bg-white/5 mix-blend-overlay" aria-hidden="true" />
+                                                    <div className="relative p-6 sm:p-7">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-sky-500 to-indigo-600 text-lg sm:text-xl font-semibold text-white shadow-lg">
+                                                                {avatarInitial}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-[18px] sm:text-[20px] font-semibold leading-tight truncate" style={{ fontFamily: "'Quintessential', cursive" }}>Hello, {firstName || 'Explorer'}</p>
+                                                                <p className="text-sm opacity-80 truncate">{user?.email}</p>
+                                                            </div>
                                                         </div>
-                                                        <span className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300/80' : 'text-slate-500'}`} style={{ fontFamily: "'Playfair Display', serif" }}>Welcome to ProPm</span>
-                                                        <span className="block text-base font-semibold uppercase tracking-wide">{firstName || 'Explorer'}</span>
+
+                                                        <div className="mt-6 space-y-3">
+                                                            <MotionLink
+                                                                to={isAdmin ? '/admin' : '/dashboard'}
+                                                                onClick={() => setOpen(false)}
+                                                                className={`w-full min-h-[56px] rounded-2xl px-5 flex items-center justify-between text-sm sm:text-base font-semibold ${darkMode ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-blue-600 text-white hover:bg-blue-500'} transition`}
+                                                                whileTap={{ scale: 0.98 }}
+                                                            >
+                                                                <span>{isAdmin ? 'Go to Admin Console' : 'Open Dashboard'}</span>
+                                                                <BookOpen className="w-5 h-5" />
+                                                            </MotionLink>
+
+                                                            <motion.button
+                                                                type="button"
+                                                                onClick={() => setShowPortalModal(true)}
+                                                                className={`w-full min-h-[56px] rounded-2xl px-5 flex items-center justify-between text-sm sm:text-base font-semibold ${darkMode ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-white text-blue-700 border border-blue-100 hover:border-blue-200'} transition`}
+                                                                whileTap={{ scale: 0.98 }}
+                                                            >
+                                                                <span>Open Course Portal</span>
+                                                                <BookOpen className={`w-5 h-5 ${darkMode ? '' : 'text-blue-500'}`} />
+                                                            </motion.button>
+                                                        </div>
                                                     </div>
-                                                    <p className={`text-xs leading-relaxed text-center ${darkMode ? 'text-slate-400' : 'text-slate-600'}`} style={{ fontFamily: "'Playfair Display', serif" }}>
-                                                        Achieve PMP certification excellence and transform your career with expert-led training.
-                                                    </p>
-                                                </div>
-                                                <div className={`flex gap-2 px-3 pb-3 ${darkMode ? 'border-white/10' : 'border-slate-200'}`}>
-                                                    <Link
-                                                        to={isAdmin ? "/admin" : "/dashboard"}
-                                                        onClick={() => setOpen(false)}
-                                                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${darkMode ? 'bg-white/10 hover:bg-white/15 text-white' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
-                                                            }`}
-                                                    >
-                                                        <BookOpen className="w-4 h-4" />
-                                                        {isAdmin ? "Admin" : "Dashboard"}
-                                                    </Link>
+                                                </section>
+                                            ) : (
+                                                <section className={`rounded-3xl border p-6 sm:p-7 text-center ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-slate-200 bg-white text-gray-900'}`}>
+                                                    <div className="space-y-3">
+                                                        <p className="text-xs uppercase tracking-[0.3em] opacity-60">Welcome</p>
+                                                        <h2 className="text-2xl font-semibold">Unlock premium PMP prep</h2>
+                                                        <p className="text-sm opacity-75">Join ProPM to access expert-led courses and personalised mentorship.</p>
+                                                    </div>
+                                                    <div className="mt-6 space-y-3">
+                                                        <MotionLink
+                                                            to="/signup"
+                                                            onClick={() => setOpen(false)}
+                                                            className={`w-full min-h-[56px] rounded-2xl px-5 flex items-center justify-center text-sm sm:text-base font-semibold ${darkMode ? 'bg-blue-500 text-white hover:bg-blue-400' : 'bg-blue-600 text-white hover:bg-blue-500'} transition`}
+                                                            whileTap={{ scale: 0.98 }}
+                                                        >
+                                                            Create an account
+                                                        </MotionLink>
+                                                        <MotionLink
+                                                            to="/login"
+                                                            onClick={() => setOpen(false)}
+                                                            className={`w-full min-h-[56px] rounded-2xl px-5 flex items-center justify-center text-sm sm:text-base font-semibold ${darkMode ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'} transition`}
+                                                            whileTap={{ scale: 0.98 }}
+                                                        >
+                                                            I already have an account
+                                                        </MotionLink>
+                                                    </div>
+                                                </section>
+                                            )}
 
-                                                    <Link
-                                                        to={profileCompleted ? "/userprofile" : "/profile/onboarding"}
-                                                        onClick={() => setOpen(false)}
-                                                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${darkMode ? 'bg-white/10 hover:bg-white/15 text-white' : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
-                                                            }`}
-                                                    >
-                                                        <UserIcon className="w-4 h-4" />
-                                                        {profileCompleted ? "View Profile" : "Edit Profile"}
-                                                    </Link>
-                                                    <button
-                                                        onClick={handleSignOut}
-                                                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${darkMode ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300' : 'bg-red-50 hover:bg-red-100 text-red-700'
-                                                            }`}
-                                                    >
-                                                        <LogOut className="w-4 h-4" />
-                                                        Sign Out
-                                                    </button>
-                                                </div>
-                                                <div className="px-3 pb-3">
-                                                    <button
-                                                        onClick={() => setShowPortalModal(true)}
-                                                        className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${darkMode ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' : 'bg-green-50 hover:bg-green-100 text-green-700'
-                                                            }`}
-                                                    >
-                                                        <BookOpen className="w-4 h-4" />
-                                                        Course Portal
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-
-
-
-                                        <nav className="mt-4 flex-1 overflow-auto">
-                                            <div className="flex flex-col items-center justify-start h-full space-y-3 py-4">
-                                                {navItems.map((l, idx) => (
-                                                    <motion.div key={l.path} custom={idx} initial="hidden" animate="visible" variants={itemVariants}>
-                                                        <Link
+                                            <section>
+                                                <div className="space-y-2 sm:space-y-3">
+                                                    {navItems.map((l, idx) => (
+                                                        <MotionLink
+                                                            key={l.path}
                                                             to={l.path}
                                                             onClick={() => setOpen(false)}
-                                                            className={`block rounded-lg px-6 py-2.5 text-base font-semibold w-full max-w-md text-center transition border ${darkMode ? 'bg-gray-800 hover:bg-gray-700 text-white border-blue-700' : 'bg-gray-50 hover:bg-gray-100 text-gray-900 border-blue-300'}`}
+                                                            className={`min-h-[60px] w-full rounded-2xl px-5 flex items-center justify-between text-[20px] font-medium border transition ${darkMode ? 'border-white/10 bg-white/[0.04] text-white hover:bg-white/10' : 'border-blue-100 bg-white text-gray-900 hover:border-blue-200'}`}
+                                                            style={{ fontFamily: "'VT323', monospace" }}
+                                                            initial="hidden"
+                                                            animate="visible"
+                                                            variants={itemVariants}
+                                                            custom={idx}
+                                                            whileTap={{ scale: 0.98 }}
                                                         >
-                                                            {l.name}
-                                                        </Link>
-                                                    </motion.div>
-                                                ))}
-                                            </div>
-                                        </nav>
+                                                            <span className="normal-case">{l.name}</span>
+                                                            <span className={`text-xs font-medium uppercase tracking-widest ${darkMode ? 'text-blue-300' : 'text-blue-500'}`}>View</span>
+                                                        </MotionLink>
+                                                    ))}
+                                                </div>
+                                            </section>
 
-                                        <div className="px-4">
-                                            <button
-                                                onClick={() => setDarkMode(!darkMode)}
-                                                aria-label="Toggle color theme"
-                                                className={`w-full max-w-md mx-auto flex items-center justify-center gap-3 rounded-lg py-3 px-4 text-sm font-semibold transition ${darkMode ? 'bg-[#0d1f3b] text-white hover:bg-[#123063]' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
-                                            >
-                                                {darkMode ? <Sun className="w-5 h-5 text-blue-300" /> : <Moon className="w-5 h-5 text-gray-700" />}
-                                                <span>{darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
-                                            </button>
-                                        </div>
+                                            {user && (
+                                                <section className={`rounded-2xl border px-4 py-5 sm:px-5 sm:py-6 space-y-3 ${darkMode ? 'border-white/10 bg-white/5 text-white' : 'border-slate-200 bg-white text-gray-900'}`}>
+                                                    <p className={`text-xs sm:text-sm opacity-70 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                        Completing your profile helps us tailor your learning path and unlock premium resources.
+                                                    </p>
+                                                    <MotionLink
+                                                        to={profileCompleted ? '/userprofile' : '/profile/onboarding'}
+                                                        onClick={() => setOpen(false)}
+                                                        className={`min-h-[56px] w-full rounded-xl px-4 flex items-center justify-between text-sm sm:text-base font-semibold uppercase ${darkMode ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'} transition`}
+                                                        style={{ fontFamily: "'VT323', monospace" }}
+                                                        whileTap={{ scale: 0.98 }}
+                                                    >
+                                                        <span>{profileCompleted ? 'View your profile' : 'Complete your profile'}</span>
+                                                        <UserIcon className="w-5 h-5" />
+                                                    </MotionLink>
+                                                </section>
+                                            )}
 
-                                        <div className="mt-6 flex flex-col items-center gap-4">
-                                            {!user && (
-                                                <>
-                                                    <Link to="/signup" onClick={() => setOpen(false)} className={`block text-center w-full max-w-md rounded-md py-4 px-6 transition font-semibold bg-blue-600 hover:bg-blue-700 text-white text-lg shadow-md`}>
-                                                        Sign Up
-                                                    </Link>
-                                                    <Link to="/login" onClick={() => setOpen(false)} className={`block text-center w-full max-w-md rounded-md py-4 px-6 transition border-2 font-semibold border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-[#062233] text-lg`}>
-                                                        Login
-                                                    </Link>
-                                                </>
+                                            {user && (
+                                                <section>
+                                                    <motion.button
+                                                        type="button"
+                                                        onClick={handleSignOut}
+                                                        className={`w-full min-h-[56px] rounded-2xl px-5 flex items-center justify-between text-sm sm:text-base font-semibold border transition ${darkMode ? 'border-red-500/20 bg-red-500/10 text-red-200 hover:bg-red-500/20' : 'border-red-100 bg-red-50 text-red-600 hover:bg-red-100'}`}
+                                                        whileTap={{ scale: 0.98 }}
+                                                    >
+                                                        <span>Sign Out</span>
+                                                        <LogOut className="w-5 h-5" />
+                                                    </motion.button>
+                                                </section>
                                             )}
                                         </div>
+                                    </div>
 
+                                    {/* Theme Toggle - Sticky at bottom, Responsive */}
+                                    <div
+                                        className={`sticky bottom-0 border-t ${darkMode ? 'bg-[#050b1a] border-white/10' : 'bg-white border-gray-200'}`}
+                                        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)', paddingTop: '1rem', paddingLeft: '1.25rem', paddingRight: '1.25rem' }}
+                                    >
+                                        <motion.button
+                                            onClick={() => setDarkMode(!darkMode)}
+                                            aria-label="Toggle color theme"
+                                            className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition ${darkMode ? 'bg-[#0d1f3b] text-white hover:bg-[#123063]' : 'bg-gray-100 text-gray-900 hover:bg-gray-200'}`}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <span>Theme</span>
+                                            {darkMode ? <Sun className="w-5 h-5 text-blue-300" /> : <Moon className="w-5 h-5 text-gray-700" />}
+                                        </motion.button>
                                     </div>
                                 </Dialog.Panel>
                             </Transition.Child>
@@ -228,24 +273,24 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
                 <Dialog as="div" className="fixed inset-0 z-[60]" onClose={() => setShowPortalModal(false)}>
                     <Transition.Child
                         as={Fragment}
-                        enter="ease-out duration-300"
+                        enter="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-300"
                         enterFrom="opacity-0"
                         enterTo="opacity-100"
-                        leave="ease-in duration-200"
+                        leave="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-200"
                         leaveFrom="opacity-100"
                         leaveTo="opacity-0"
                     >
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md" />
                     </Transition.Child>
 
                     <div className="fixed inset-0 overflow-y-auto">
                         <div className="flex min-h-full items-center justify-center p-4">
                             <Transition.Child
                                 as={Fragment}
-                                enter="ease-out duration-300"
+                                enter="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-300"
                                 enterFrom="opacity-0 scale-95"
                                 enterTo="opacity-100 scale-100"
-                                leave="ease-in duration-200"
+                                leave="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-200"
                                 leaveFrom="opacity-100 scale-100"
                                 leaveTo="opacity-0 scale-95"
                             >

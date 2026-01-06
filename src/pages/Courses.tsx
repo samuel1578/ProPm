@@ -6,6 +6,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { useState, useEffect } from 'react';
+import coursesHero from '../assets/courses.jpg';
 import { useAuth } from '../context/AuthContext';
 import { createEnrollment, getUserEnrollments, findUserEnrollmentByCourse, verifyAccount } from '../lib/appwrite';
 import CurrencyConverter from '../components/CurrencyConverter';
@@ -22,6 +23,7 @@ interface Certification {
   level: string;
   features: string[];
   eligibility: string[];
+  comingSoon?: boolean;
 }
 
 const certifications: Certification[] = [
@@ -67,6 +69,7 @@ const certifications: Certification[] = [
     description: 'The PMI-ACP certification highlights your agile expertise with the industry\'s only agnostic, experienced-based, ISO-accredited exam. It validates your ability to drive excellence across methodologies, including Scrum, Lean, Kanban, and more—with a truly agile and a team-centric approach.',
     duration: '2-4 months',
     level: 'Intermediate',
+    comingSoon: true,
     features: [
       '86% of holders qualified for new opportunities',
       '84% gained recognition for career advancement',
@@ -87,6 +90,7 @@ const certifications: Certification[] = [
     description: 'Conduct a symphony of project portfolios. The PfMP certification proves you have the advanced skills to manage and align multiple projects, programs and operations with your organization\'s strategic goals. As a PfMP holder, you\'ll balance demands, oversee portfolio success, and allocate resources where they matter most.',
     duration: '4-6 months',
     level: 'Advanced',
+    comingSoon: true,
     features: [
       '35% more successful programs in mature organizations',
       '1.5M+ PMI certification holders',
@@ -285,7 +289,7 @@ export default function Courses() {
 
   return (
     <div className="bg-white dark:bg-[#071330]">
-      <section id="courses-hero" className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
+      <section id="courses-hero" className="pt-16 sm:pt-20 pb-0 sm:pb-0 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
             Master PMI Certifications
@@ -294,7 +298,16 @@ export default function Courses() {
             Structured plans and expert instruction to prepare you for PMI exams — taught by a PMP‑certified instructor. Our focus is helping you master the course material so you can confidently sit the PMI exam.
           </p>
 
-          <div className="mt-6 max-w-3xl mx-auto text-left bg-white/60 dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+          <div className="mx-auto mt-6 w-full max-w-3xl">
+            <img
+              src={coursesHero}
+              alt="Courses hero"
+              className="w-full rounded-lg shadow-lg object-cover"
+              style={{ maxHeight: 360 }}
+            />
+          </div>
+
+          <div className="mt-4 max-w-3xl mx-auto text-left bg-white/60 dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10">
             <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Important facts</h4>
             <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
               <li>These are PMI‑aligned courses and preparation plans for PMI exams (PMP, CAPM, PMI‑ACP, PfMP).</li>
@@ -307,10 +320,10 @@ export default function Courses() {
 
       {/* features grid removed from top and relocated below the courses swiper */}
 
-      <section id="certifications" className="py-16 sm:py-20">
+      <section id="certifications" className="pt-0 sm:pt-0 pb-16 sm:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-4 text-center">
-            <div className="mt-3 flex items-center justify-center">
+          <div className="mt-[0.5cm] mb-4 text-center">
+            <div className="mt-0 flex items-center justify-center">
               <CurrencyConverter onCurrencyChange={(c, r) => { setCurrentCurrency(c); setExchangeRate(r); }} />
             </div>
 
@@ -388,9 +401,16 @@ export default function Courses() {
                 <div className="bg-white dark:bg-[#0b1b36] border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden hover:shadow-xl hover:shadow-blue-500/10 transition-shadow duration-300 h-full">
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 text-xs font-semibold rounded-full">
-                        {certification.level}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 text-xs font-semibold rounded-full">
+                          {certification.level}
+                        </span>
+                        {certification.comingSoon && (
+                          <span className="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200 text-xs font-semibold rounded-full uppercase tracking-wide">
+                            Coming Soon
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center text-gray-600 dark:text-gray-300 text-sm">
                         <Clock className="h-4 w-4 mr-1" />
                         {certification.duration}
@@ -435,36 +455,44 @@ export default function Courses() {
                     </div>
 
                     <div className="space-y-2">
-                      {user ? (
-                        <button
-                          onClick={() => handleEnrollClick(certification)}
-                          disabled={processing || !enrollmentsConfigured}
-                          className="block w-full px-4 py-3 bg-blue-600 text-white text-center font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-                        >
-                          {processing ? 'Processing...' : enrollmentsConfigured ? 'Enroll Now' : 'Enrollment Unavailable'}
-                        </button>
+                      {certification.comingSoon ? (
+                        <div className="px-4 py-3 rounded-lg border border-dashed border-amber-500/60 bg-amber-50 dark:bg-amber-900/10 text-amber-800 dark:text-amber-200 text-sm text-center font-medium">
+                          We are finalizing this training track. Check back soon for enrollment details.
+                        </div>
                       ) : (
-                        <Link
-                          to="/signup"
-                          className="block w-full px-4 py-3 bg-blue-600 text-white text-center font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          Create Account to Enroll
-                        </Link>
-                      )}
+                        <>
+                          {user ? (
+                            <button
+                              onClick={() => handleEnrollClick(certification)}
+                              disabled={processing || !enrollmentsConfigured}
+                              className="block w-full px-4 py-3 bg-blue-600 text-white text-center font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+                            >
+                              {processing ? 'Processing...' : enrollmentsConfigured ? 'Enroll Now' : 'Enrollment Unavailable'}
+                            </button>
+                          ) : (
+                            <Link
+                              to="/signup"
+                              className="block w-full px-4 py-3 bg-blue-600 text-white text-center font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              Create Account to Enroll
+                            </Link>
+                          )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button className="w-full px-4 py-2 text-blue-600 dark:text-blue-300 text-sm font-medium border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
-                          Learn More
-                        </button>
-                        <Link to="/pricing#plans" className="w-full px-4 py-2 text-sm bg-gray-50 dark:bg-[#071330] rounded-lg text-center">View Pricing</Link>
-                      </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button className="w-full px-4 py-2 text-blue-600 dark:text-blue-300 text-sm font-medium border border-blue-600 dark:border-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
+                              Learn More
+                            </button>
+                            <Link to="/pricing#plans" className="w-full px-4 py-2 text-sm bg-gray-50 dark:bg-[#071330] rounded-lg text-center">View Pricing</Link>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
               </SwiperSlide>
             ))}
           </Swiper>
-          <div className="flex gap-3 justify-center mt-4">
+          <div className="flex gap-3 justify-center mt-[0.5cm]">
             <button
               onClick={() => swiperInstance?.slidePrev()}
               disabled={!swiperInstance}
@@ -483,7 +511,7 @@ export default function Courses() {
         </div>
       </section>
 
-      <section className="py-12 sm:py-16 bg-white dark:bg-[#050b1a] border-b border-gray-200 dark:border-gray-800">
+      <section className="pt-0 sm:pt-0 pb-12 sm:pb-16 bg-white dark:bg-[#050b1a] border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
             <div className="p-4 bg-gray-50 dark:bg-[#071330] rounded-xl border border-gray-200 dark:border-gray-800">
