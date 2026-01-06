@@ -63,87 +63,19 @@ export async function signUp(email: string, password: string, name?: string) {
     if (!account) {
         throw new Error(APPWRITE_CONFIG_ERROR);
     }
-    // Creates a new user account
-    // Some Appwrite SDK versions expect (userId, email, password, name)
-    // Others may accept (email, password, name) — try both with useful errors.
-    const acct: any = account;
 
-    // Determine a userId; prefer ID.unique() but fallback to timestamp-based id
-    let userId: string | undefined;
     try {
-        if (typeof ID?.unique === 'function') userId = ID.unique();
-    } catch (err) {
-        console.debug('ID.unique() not available:', err);
-    }
-    if (!userId) userId = `user-${Date.now()}`;
+        const userId = ID.unique();
+        return await account.create(userId, email, password, name);
+    } catch (err: any) {
+        const msg = String(err?.message || '');
+        console.error('Sign-up failed:', err);
 
-    // Try the (userId, email, password, name) signature first
-    if (typeof acct.create === 'function') {
-        try {
-            return await acct.create(userId, email, password, name);
-        } catch (err: any) {
-            // If API complains about missing userId or method signature, try without userId
-            const msg = (err && err.message) || String(err);
-            if (msg.includes('userId') || msg.includes('Missing required parameter')) {
-                try {
-                    // Some SDKs expect (email, password, name)
-                    return await acct.create(email, password, name);
-                } catch (err2: any) {
-                    // As a last resort, POST directly to the REST API with explicit userId
-                    const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/account`;
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        // Ensure cookies are included when Appwrite sets a session cookie
-                        credentials: 'include',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Appwrite-Project': projectId,
-                        },
-                        body: JSON.stringify({ userId, name, email, password }),
-                    });
-
-                    if (!resp.ok) {
-                        const text = await resp.text().catch(() => null);
-                        let body: any = null;
-                        try { body = text ? JSON.parse(text) : null; } catch (e) { /* not JSON */ }
-                        const msg = body?.message || text || `${resp.status} ${resp.statusText}`;
-                        console.error('Appwrite signUp REST fallback failed:', { status: resp.status, statusText: resp.statusText, body: text });
-                        throw new Error(`Sign up failed (REST fallback): ${msg}`);
-                    }
-
-                    return await resp.json();
-                }
-            }
-            throw err;
-        }
-    }
-
-    // REST fallback if Account.create isn't available
-    {
-        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/account`;
-        const resp = await fetch(url, {
-            method: 'POST',
-            // Ensure cookies are included when Appwrite sets a session cookie
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Appwrite-Project': projectId,
-            },
-            body: JSON.stringify({ userId, name, email, password }),
-        });
-
-        if (!resp.ok) {
-            const text = await resp.text().catch(() => null);
-            let body: any = null;
-            try { body = text ? JSON.parse(text) : null; } catch (e) { /* not JSON */ }
-            const msg = body?.message || text || `${resp.status} ${resp.statusText}`;
-            console.error('Appwrite signUp REST fallback failed:', { status: resp.status, statusText: resp.statusText, body: text });
-            throw new Error(`Sign up failed (REST fallback): ${msg}`);
+        if (msg.includes('user') && msg.includes('already exists')) {
+            throw new Error('An account with this email already exists.');
         }
 
-        return await resp.json();
+        throw new Error(msg || 'Sign-up failed. Please try again.');
     }
 }
 
@@ -151,87 +83,22 @@ export async function signIn(email: string, password: string) {
     if (!account) {
         throw new Error(APPWRITE_CONFIG_ERROR);
     }
-    const accountAny: any = account;
-
-    const restSignIn = async () => {
-        const url = `${endpoint.replace(/\/v1\/?$/, '')}/v1/account/sessions`;
-        console.debug('Using REST sign-in POST to', url);
-        const res = await fetch(url, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Appwrite-Project': projectId,
-            },
-            body: JSON.stringify({ email, password }),
-        });
-
-        let body: any = null;
-        try { body = await res.json(); } catch (e) { body = await res.text().catch(() => null); }
-
-        if (!res.ok) {
-            if (res.status === 429 || String((body && body.message) || '').toLowerCase().includes('rate')) {
-                throw new Error('Too many login attempts. Please wait a few minutes and try again.');
-            }
-            console.error('signIn REST fallback failed', { status: res.status, body, headers: Object.fromEntries(res.headers.entries ? res.headers.entries() : []) });
-            throw new Error(body?.message || `Sign-in failed (${res.status})`);
-        }
-
-        return body;
-    };
 
     try {
-        // Prefer explicit email session if available
-        if (typeof accountAny.createEmailSession === 'function') {
-            try {
-                console.debug('Trying SDK createEmailSession(email, password)');
-                return await accountAny.createEmailSession(email, password);
-            } catch (err: any) {
-                const msg = String(err?.message || '');
-                console.warn('createEmailSession failed:', err);
-                if (msg.includes('Rate limit')) throw new Error('Too many login attempts. Please wait a few minutes and try again.');
-                // If the SDK complains about userId/missing params, fall through to other attempts
-                if (!msg.includes('userId') && !msg.includes('Missing required parameter')) throw err;
-            }
-        }
-
-        // If createSession exists, check its declared arity to decide how to call it.
-        if (typeof accountAny.createSession === 'function') {
-            const arity = typeof accountAny.createSession.length === 'number' ? accountAny.createSession.length : -1;
-
-            // If it looks positional (arity >= 2), call with (email, password)
-            if (arity >= 2) {
-                try {
-                    console.debug('Trying SDK createSession(email, password) positional');
-                    return await accountAny.createSession(email, password);
-                } catch (errPos: any) {
-                    const msg = String(errPos?.message || '');
-                    console.warn('createSession(email,password) failed:', errPos);
-                    if (msg.includes('Rate limit')) throw new Error('Too many login attempts. Please wait a few minutes and try again.');
-                    if (msg.includes('userId')) {
-                        console.warn('createSession positional failed due to userId requirement; using REST fallback');
-                        return await restSignIn();
-                    }
-                    // otherwise try REST fallback
-                    return await restSignIn();
-                }
-            }
-
-            // If arity isn't positional, avoid calling createSession with object (it may expect userId); use REST
-            console.warn('createSession signature appears non-positional; using REST fallback to create session.');
-            return await restSignIn();
-        }
-
-        // No suitable SDK sign-in method exposed; fallback to REST
-        return await restSignIn();
+        return await account.createEmailPasswordSession(email, password);
     } catch (err: any) {
         const msg = String(err?.message || '');
-        // If SDK threw missing userId error, fallback to REST
-        if (msg.includes('Missing required parameter') && msg.includes('userId')) {
-            return await restSignIn();
+        console.error('Sign-in failed:', err);
+
+        if (msg.includes('Rate limit') || msg.includes('429')) {
+            throw new Error('Too many login attempts. Please wait a few minutes and try again.');
         }
-        throw err;
+
+        if (msg.includes('Invalid credentials') || msg.includes('user') || msg.includes('password')) {
+            throw new Error('Invalid email or password.');
+        }
+
+        throw new Error(msg || 'Sign-in failed. Please check your credentials.');
     }
 }
 
