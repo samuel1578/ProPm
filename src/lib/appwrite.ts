@@ -49,6 +49,11 @@ const ENROLLMENTS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_ENROLLMENTS_COL
 const KNOWLEDGE_AREAS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_KNOWLEDGE_AREAS_COLLECTION_ID as string) || '';
 const LIVE_SESSIONS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_LIVE_SESSIONS_COLLECTION_ID as string) || '';
 const ACTIVITIES_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_ACTIVITIES_COLLECTION_ID as string) || '';
+const QUESTIONS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_QUESTIONS_COLLECTION_ID as string) || '';
+const QUIZ_ATTEMPTS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_QUIZ_ATTEMPTS_COLLECTION_ID as string) || '';
+const USER_PROGRESS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_USER_PROGRESS_COLLECTION_ID as string) || '';
+const RESOURCES_COLLECTION_ID = ((import.meta.env.VITE_APPWRITE_RESOURCES_COLLECTION_ID as string) ?? 'resources').trim() || 'resources';
+const RESOURCES_BUCKET_ID = ((import.meta.env.VITE_APPWRITE_RESOURCES_BUCKET_ID as string) ?? '695e669c00067331e2aa').trim() || '695e669c00067331e2aa';
 const BUCKET_ID = (import.meta.env.VITE_APPWRITE_BUCKET_ID as string) || '';
 
 if (!databases) {
@@ -640,6 +645,503 @@ export async function ping() {
         throw new Error(`Appwrite health check failed (${res.status})`);
     }
     return;
+}
+
+// ================== RESOURCES FUNCTIONS ==================
+
+/**
+ * Get resources by exam type
+ */
+export async function getResources(examType?: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !RESOURCES_COLLECTION_ID || RESOURCES_COLLECTION_ID === '') {
+        throw new Error(`Resources collection not configured. Set VITE_APPWRITE_RESOURCES_COLLECTION_ID. Current value: "${RESOURCES_COLLECTION_ID}"`);
+    }
+
+    try {
+        const queries = [];
+        if (examType) {
+            queries.push(Query.equal('examType', examType));
+        }
+        queries.push(Query.orderAsc('order'));
+
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            RESOURCES_COLLECTION_ID,
+            queries
+        );
+
+        return response.documents;
+    } catch (error) {
+        console.error('Failed to fetch resources:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get file download URL
+ */
+export async function getResourceDownloadUrl(fileId: string): Promise<string> {
+    if (!storage) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!RESOURCES_BUCKET_ID || RESOURCES_BUCKET_ID === '') {
+        throw new Error(`Resources bucket not configured. Set VITE_APPWRITE_RESOURCES_BUCKET_ID. Current value: "${RESOURCES_BUCKET_ID}"`);
+    }
+
+    try {
+        const result = storage.getFileDownload(RESOURCES_BUCKET_ID, fileId);
+        return result.toString();
+    } catch (error) {
+        console.error('Failed to get download URL:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get file preview URL (for images/videos)
+ */
+export async function getResourcePreviewUrl(fileId: string): Promise<string> {
+    if (!storage) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!RESOURCES_BUCKET_ID || RESOURCES_BUCKET_ID === '') {
+        throw new Error(`Resources bucket not configured. Set VITE_APPWRITE_RESOURCES_BUCKET_ID. Current value: "${RESOURCES_BUCKET_ID}"`);
+    }
+
+    try {
+        const result = storage.getFilePreview(RESOURCES_BUCKET_ID, fileId);
+        return result.toString();
+    } catch (error) {
+        console.error('Failed to get preview URL:', error);
+        throw error;
+    }
+}
+
+/**
+ * Track resource download
+ */
+export async function trackResourceDownload(userId: string, resourceId: string): Promise<void> {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !RESOURCES_COLLECTION_ID) return;
+
+    try {
+        const resource = await databases.getDocument(
+            DATABASE_ID,
+            RESOURCES_COLLECTION_ID,
+            resourceId
+        );
+
+        await databases.updateDocument(
+            DATABASE_ID,
+            RESOURCES_COLLECTION_ID,
+            resourceId,
+            {
+                downloadCount: (resource.downloadCount || 0) + 1,
+            }
+        );
+    } catch (error) {
+        console.error('Failed to track download:', error);
+    }
+}
+
+/**
+ * Create a new resource (admin only)
+ */
+export async function createResource(data: {
+    title: string;
+    description: string;
+    examType: string;
+    category: string;
+    fileId?: string;
+    fileSize?: number;
+    fileType?: string;
+    isPremium: boolean;
+    tags?: string[];
+    order?: number;
+}) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !RESOURCES_COLLECTION_ID) {
+        throw new Error('Resources collection not configured.');
+    }
+
+    try {
+        return await databases.createDocument(
+            DATABASE_ID,
+            RESOURCES_COLLECTION_ID,
+            ID.unique(),
+            {
+                ...data,
+                downloadCount: 0,
+                order: data.order || 0,
+            }
+        );
+    } catch (error) {
+        console.error('Failed to create resource:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update a resource (admin only)
+ */
+export async function updateResource(resourceId: string, data: any) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !RESOURCES_COLLECTION_ID) {
+        throw new Error('Resources collection not configured.');
+    }
+
+    try {
+        return await databases.updateDocument(
+            DATABASE_ID,
+            RESOURCES_COLLECTION_ID,
+            resourceId,
+            data
+        );
+    } catch (error) {
+        console.error('Failed to update resource:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete a resource (admin only)
+ */
+export async function deleteResource(resourceId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !RESOURCES_COLLECTION_ID) {
+        throw new Error('Resources collection not configured.');
+    }
+
+    try {
+        return await databases.deleteDocument(
+            DATABASE_ID,
+            RESOURCES_COLLECTION_ID,
+            resourceId
+        );
+    } catch (error) {
+        console.error('Failed to delete resource:', error);
+        throw error;
+    }
+}
+
+/**
+ * Upload file to resources bucket
+ */
+export async function uploadResourceFile(file: File) {
+    if (!storage) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!RESOURCES_BUCKET_ID) {
+        throw new Error('Resources bucket not configured.');
+    }
+
+    try {
+        const fileId = ID.unique();
+        const response = await storage.createFile(
+            RESOURCES_BUCKET_ID,
+            fileId,
+            file
+        );
+        return response;
+    } catch (error) {
+        console.error('Failed to upload file:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete file from resources bucket
+ */
+export async function deleteResourceFile(fileId: string) {
+    if (!storage) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!RESOURCES_BUCKET_ID) {
+        throw new Error('Resources bucket not configured.');
+    }
+
+    try {
+        return await storage.deleteFile(RESOURCES_BUCKET_ID, fileId);
+    } catch (error) {
+        console.error('Failed to delete file:', error);
+        throw error;
+    }
+}
+
+// ================== QUIZ & PROGRESS FUNCTIONS ==================
+
+/**
+ * Get random questions for practice/exam
+ */
+export async function getQuestions(
+    examType: 'PMP' | 'CAPM' | 'PMI-ACP' | 'PfMP',
+    count: number,
+    knowledgeAreas?: string[],
+    difficulty?: 'easy' | 'medium' | 'hard'
+) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !QUESTIONS_COLLECTION_ID) {
+        throw new Error('Questions collection not configured. Set VITE_APPWRITE_DATABASE_ID and VITE_APPWRITE_QUESTIONS_COLLECTION_ID.');
+    }
+
+    try {
+        const queries: string[] = [
+            Query.equal('examType', examType),
+            Query.limit(count * 3), // Get extra to allow for randomization
+        ];
+
+        if (knowledgeAreas && knowledgeAreas.length > 0) {
+            queries.push(Query.equal('knowledgeArea', knowledgeAreas));
+        }
+
+        if (difficulty) {
+            queries.push(Query.equal('difficulty', difficulty));
+        }
+
+        const response = await databases.listDocuments(DATABASE_ID, QUESTIONS_COLLECTION_ID, queries);
+
+        // Shuffle and limit to requested count
+        const shuffled = response.documents.sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, count);
+    } catch (err) {
+        console.error('Failed to fetch questions:', err);
+        throw err;
+    }
+}
+
+/**
+ * Submit a quiz attempt and update user progress
+ */
+export async function submitQuizAttempt(
+    userId: string,
+    enrollmentId: string,
+    examType: string,
+    mode: string,
+    answers: any[],
+    score: number,
+    correctAnswers: number,
+    totalQuestions: number,
+    timeSpent: number,
+    knowledgeAreaBreakdown: any[]
+) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !QUIZ_ATTEMPTS_COLLECTION_ID || !USER_PROGRESS_COLLECTION_ID) {
+        throw new Error('Quiz collections not configured. Set VITE_APPWRITE_QUIZ_ATTEMPTS_COLLECTION_ID and VITE_APPWRITE_USER_PROGRESS_COLLECTION_ID.');
+    }
+
+    try {
+        // Save quiz attempt
+        const attemptData = {
+            userId,
+            enrollmentId,
+            examType,
+            mode,
+            answers: JSON.stringify(answers),
+            score,
+            correctAnswers,
+            totalQuestions,
+            timeSpent,
+            knowledgeAreaBreakdown: JSON.stringify(knowledgeAreaBreakdown),
+            completedAt: new Date().toISOString(),
+        };
+
+        const attempt = await databases.createDocument(
+            DATABASE_ID,
+            QUIZ_ATTEMPTS_COLLECTION_ID,
+            ID.unique(),
+            attemptData
+        );
+
+        // Update or create user progress
+        await updateUserProgress(userId, enrollmentId, examType, answers, knowledgeAreaBreakdown);
+
+        return attempt;
+    } catch (err) {
+        console.error('Failed to submit quiz attempt:', err);
+        throw err;
+    }
+}
+
+/**
+ * Update user progress statistics
+ */
+async function updateUserProgress(
+    userId: string,
+    enrollmentId: string,
+    examType: string,
+    answers: any[],
+    knowledgeAreaBreakdown: any[]
+) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+
+    try {
+        // Try to get existing progress
+        let existingProgress: any = null;
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                USER_PROGRESS_COLLECTION_ID,
+                [Query.equal('userId', userId), Query.equal('enrollmentId', enrollmentId)]
+            );
+            if (response.documents.length > 0) {
+                existingProgress = response.documents[0];
+            }
+        } catch (err) {
+            console.log('No existing progress found');
+        }
+
+        const correctAnswersCount = answers.filter((a) => a.isCorrect).length;
+        const totalAttempted = existingProgress
+            ? existingProgress.totalQuestionsAttempted + answers.length
+            : answers.length;
+        const totalCorrect = existingProgress
+            ? existingProgress.correctAnswers + correctAnswersCount
+            : correctAnswersCount;
+        const overallAccuracy = (totalCorrect / totalAttempted) * 100;
+
+        // Merge knowledge area scores
+        const areaScoresMap = new Map();
+
+        // Add existing scores
+        if (existingProgress?.knowledgeAreaScores) {
+            const existing = typeof existingProgress.knowledgeAreaScores === 'string'
+                ? JSON.parse(existingProgress.knowledgeAreaScores)
+                : existingProgress.knowledgeAreaScores;
+
+            existing.forEach((area: any) => {
+                areaScoresMap.set(area.area, area);
+            });
+        }
+
+        // Update with new scores
+        knowledgeAreaBreakdown.forEach((area: any) => {
+            if (areaScoresMap.has(area.area)) {
+                const existing = areaScoresMap.get(area.area);
+                const newCorrect = existing.correct + area.correct;
+                const newTotal = existing.total + area.total;
+                areaScoresMap.set(area.area, {
+                    area: area.area,
+                    correct: newCorrect,
+                    total: newTotal,
+                    accuracy: (newCorrect / newTotal) * 100,
+                });
+            } else {
+                areaScoresMap.set(area.area, area);
+            }
+        });
+
+        const knowledgeAreaScores = Array.from(areaScoresMap.values());
+
+        // Identify strong and weak areas
+        const strongAreas = knowledgeAreaScores
+            .filter((area: any) => area.accuracy >= 70)
+            .map((area: any) => area.area);
+        const weakAreas = knowledgeAreaScores
+            .filter((area: any) => area.accuracy < 60)
+            .map((area: any) => area.area);
+
+        const progressData = {
+            userId,
+            enrollmentId,
+            examType,
+            totalQuestionsAttempted: totalAttempted,
+            correctAnswers: totalCorrect,
+            overallAccuracy,
+            knowledgeAreaScores: JSON.stringify(knowledgeAreaScores),
+            strongAreas: JSON.stringify(strongAreas),
+            weakAreas: JSON.stringify(weakAreas),
+            lastAttemptAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        if (existingProgress) {
+            // Update existing progress
+            await databases.updateDocument(
+                DATABASE_ID,
+                USER_PROGRESS_COLLECTION_ID,
+                existingProgress.$id,
+                progressData
+            );
+        } else {
+            // Create new progress
+            await databases.createDocument(
+                DATABASE_ID,
+                USER_PROGRESS_COLLECTION_ID,
+                ID.unique(),
+                { ...progressData, createdAt: new Date().toISOString() }
+            );
+        }
+    } catch (err) {
+        console.error('Failed to update user progress:', err);
+        throw err;
+    }
+}
+
+/**
+ * Get user progress for a specific enrollment
+ */
+export async function getUserProgress(userId: string, enrollmentId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !USER_PROGRESS_COLLECTION_ID) {
+        throw new Error('User progress collection not configured. Set VITE_APPWRITE_USER_PROGRESS_COLLECTION_ID.');
+    }
+
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            USER_PROGRESS_COLLECTION_ID,
+            [Query.equal('userId', userId), Query.equal('enrollmentId', enrollmentId)]
+        );
+
+        if (response.documents.length === 0) {
+            return null;
+        }
+
+        const progress = response.documents[0];
+
+        // Parse JSON fields
+        return {
+            ...progress,
+            knowledgeAreaScores: typeof progress.knowledgeAreaScores === 'string'
+                ? JSON.parse(progress.knowledgeAreaScores)
+                : progress.knowledgeAreaScores,
+            strongAreas: typeof progress.strongAreas === 'string'
+                ? JSON.parse(progress.strongAreas)
+                : progress.strongAreas,
+            weakAreas: typeof progress.weakAreas === 'string'
+                ? JSON.parse(progress.weakAreas)
+                : progress.weakAreas,
+        };
+    } catch (err) {
+        console.error('Failed to get user progress:', err);
+        throw err;
+    }
+}
+
+/**
+ * Get quiz attempt history for a user
+ */
+export async function getQuizHistory(userId: string, limit: number = 10) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!DATABASE_ID || !QUIZ_ATTEMPTS_COLLECTION_ID) {
+        throw new Error('Quiz attempts collection not configured. Set VITE_APPWRITE_QUIZ_ATTEMPTS_COLLECTION_ID.');
+    }
+
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            QUIZ_ATTEMPTS_COLLECTION_ID,
+            [
+                Query.equal('userId', userId),
+                Query.orderDesc('completedAt'),
+                Query.limit(limit),
+            ]
+        );
+
+        return response.documents.map((doc) => ({
+            ...doc,
+            answers: typeof doc.answers === 'string' ? JSON.parse(doc.answers) : doc.answers,
+            knowledgeAreaBreakdown: typeof doc.knowledgeAreaBreakdown === 'string'
+                ? JSON.parse(doc.knowledgeAreaBreakdown)
+                : doc.knowledgeAreaBreakdown,
+        }));
+    } catch (err) {
+        console.error('Failed to get quiz history:', err);
+        throw err;
+    }
 }
 
 export { client, account, databases, storage };

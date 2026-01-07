@@ -14,7 +14,6 @@ interface NavItem {
 
 export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; logo?: string }) {
     const [open, setOpen] = useState(false);
-    const [showPortalModal, setShowPortalModal] = useState(false);
     const [profileCompleted, setProfileCompleted] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
     const { darkMode, setDarkMode } = useTheme();
@@ -150,15 +149,15 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
                                                                 <BookOpen className="w-5 h-5" />
                                                             </MotionLink>
 
-                                                            <motion.button
-                                                                type="button"
-                                                                onClick={() => setShowPortalModal(true)}
+                                                            <MotionLink
+                                                                to="/course-portal"
+                                                                onClick={() => setOpen(false)}
                                                                 className={`w-full min-h-[56px] rounded-2xl px-5 flex items-center justify-between text-sm sm:text-base font-semibold ${darkMode ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-white text-blue-700 border border-blue-100 hover:border-blue-200'} transition`}
                                                                 whileTap={{ scale: 0.98 }}
                                                             >
                                                                 <span>Open Course Portal</span>
                                                                 <BookOpen className={`w-5 h-5 ${darkMode ? '' : 'text-blue-500'}`} />
-                                                            </motion.button>
+                                                            </MotionLink>
                                                         </div>
                                                     </div>
                                                 </section>
@@ -261,55 +260,6 @@ export default function MobileMenu({ navItems, logo }: { navItems: NavItem[]; lo
                                             {darkMode ? <Sun className="w-5 h-5 text-blue-300" /> : <Moon className="w-5 h-5 text-gray-700" />}
                                         </motion.button>
                                     </div>
-                                </Dialog.Panel>
-                            </Transition.Child>
-                        </div>
-                    </div>
-                </Dialog>
-            </Transition>
-
-            {/* Course Portal Modal */}
-            <Transition show={showPortalModal} as={Fragment}>
-                <Dialog as="div" className="fixed inset-0 z-[60]" onClose={() => setShowPortalModal(false)}>
-                    <Transition.Child
-                        as={Fragment}
-                        enter="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md" />
-                    </Transition.Child>
-
-                    <div className="fixed inset-0 overflow-y-auto">
-                        <div className="flex min-h-full items-center justify-center p-4">
-                            <Transition.Child
-                                as={Fragment}
-                                enter="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-300"
-                                enterFrom="opacity-0 scale-95"
-                                enterTo="opacity-100 scale-100"
-                                leave="transition ease-[cubic-bezier(0.4,0,0.2,1)] duration-200"
-                                leaveFrom="opacity-100 scale-100"
-                                leaveTo="opacity-0 scale-95"
-                            >
-                                <Dialog.Panel className={`w-full max-w-md transform overflow-hidden rounded-2xl p-8 text-center shadow-2xl transition-all ${darkMode ? 'bg-[#0b1b36]' : 'bg-white'}`}>
-                                    <div className="mb-6">
-                                        <img src={logo} alt="ProPM" className="h-16 w-auto mx-auto mb-4" />
-                                    </div>
-                                    <h3 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        Coming Soon
-                                    </h3>
-                                    <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                        The Course Portal is still under development and will be released in Phase 2.
-                                    </p>
-                                    <button
-                                        onClick={() => setShowPortalModal(false)}
-                                        className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-                                    >
-                                        Close
-                                    </button>
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

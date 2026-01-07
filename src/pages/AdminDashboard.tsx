@@ -16,10 +16,12 @@ import {
     Shield,
     BarChart3,
     Eye,
-    X
+    X,
+    FileText,
 } from 'lucide-react';
 import { databases } from '../lib/appwrite';
 import { Query } from 'appwrite';
+import AdminResourceManager from '../components/AdminResourceManager';
 
 const VITE_APPWRITE_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 const COLLECTIONS = {
@@ -248,9 +250,15 @@ export default function AdminDashboard() {
             icon: BarChart3,
             label: 'Progress Summary',
             color: 'indigo',
-            fields: ['userId', 'enrollmentId', 'overallCompletion']
+            fields: ['userId', 'totalProgress', 'lastUpdate']
         },
-    };
+        RESOURCES: {
+            icon: FileText,
+            label: 'Resources',
+            color: 'teal',
+            fields: ['title', 'examType', 'category', 'downloadCount']
+        }
+    } as const;
 
     if (initializing || !user) {
         return (
@@ -369,80 +377,84 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Documents Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
-                    {loading ? (
-                        <div className="p-12 text-center">
-                            <RefreshCw className="animate-spin h-8 w-8 text-blue-600 mx-auto" />
-                        </div>
-                    ) : documents.length === 0 ? (
-                        <div className="p-12 text-center text-gray-500">
-                            No documents found
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                                        {config.fields.map(field => (
-                                            <th key={field} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                                {field}
-                                            </th>
-                                        ))}
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                    {documents.map((doc) => (
-                                        <tr key={doc.$id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td className="px-6 py-4 text-sm font-mono text-gray-500">
-                                                {doc.$id.slice(0, 8)}...
-                                            </td>
+                {activeTab === 'RESOURCES' ? (
+                    <AdminResourceManager />
+                ) : (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
+                        {loading ? (
+                            <div className="p-12 text-center">
+                                <RefreshCw className="animate-spin h-8 w-8 text-blue-600 mx-auto" />
+                            </div>
+                        ) : documents.length === 0 ? (
+                            <div className="p-12 text-center text-gray-500">
+                                No documents found
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                                             {config.fields.map(field => (
-                                                <td key={field} className="px-6 py-4 text-sm">
-                                                    {Array.isArray(doc[field])
-                                                        ? doc[field].join(', ')
-                                                        : typeof doc[field] === 'boolean'
-                                                            ? doc[field] ? '✓' : '✗'
-                                                            : doc[field] || '—'}
-                                                </td>
+                                                <th key={field} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                                    {field}
+                                                </th>
                                             ))}
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(doc.$createdAt).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-right text-sm">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleView(doc)}
-                                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                                        title="View"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleEdit(doc)}
-                                                        className="p-1 text-green-600 hover:bg-green-50 rounded"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(doc.$id)}
-                                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        {documents.map((doc) => (
+                                            <tr key={doc.$id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                <td className="px-6 py-4 text-sm font-mono text-gray-500">
+                                                    {doc.$id.slice(0, 8)}...
+                                                </td>
+                                                {config.fields.map(field => (
+                                                    <td key={field} className="px-6 py-4 text-sm">
+                                                        {Array.isArray(doc[field])
+                                                            ? doc[field].join(', ')
+                                                            : typeof doc[field] === 'boolean'
+                                                                ? doc[field] ? '✓' : '✗'
+                                                                : doc[field] || '—'}
+                                                    </td>
+                                                ))}
+                                                <td className="px-6 py-4 text-sm text-gray-500">
+                                                    {new Date(doc.$createdAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-6 py-4 text-right text-sm">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleView(doc)}
+                                                            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                                            title="View"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleEdit(doc)}
+                                                            className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                                            title="Edit"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(doc.$id)}
+                                                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Modal for View/Edit/Create */}

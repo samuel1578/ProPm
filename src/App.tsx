@@ -14,6 +14,7 @@ import UserProfile from './pages/UserProfile';
 import ProfileOnboarding from './pages/ProfileOnboarding';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import CoursePortal from './pages/CoursePortal';
 
 function App() {
   return (
@@ -87,6 +88,14 @@ function App() {
                 element={
                   <Layout>
                     <AdminDashboard />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/course-portal"
+                element={
+                  <Layout>
+                    <CoursePortal />
                   </Layout>
                 }
               />

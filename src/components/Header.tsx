@@ -1,5 +1,5 @@
 import { useEffect, useState, Fragment } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Sun, Moon, ChevronDown, User as UserIcon, LogOut, BookOpen, X } from 'lucide-react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useTheme } from '../context/ThemeContext';
@@ -19,11 +19,11 @@ const navItems = [
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { darkMode, setDarkMode } = useTheme();
   const logo = darkMode ? darkLogo : lightLogo;
   const [isScrolled, setIsScrolled] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showPortalModal, setShowPortalModal] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const { user, signOut, initializing } = useAuth();
@@ -172,7 +172,7 @@ export default function Header() {
                     <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                     <button
                       onClick={() => {
-                        setShowPortalModal(true);
+                        navigate('/course-portal');
                         setShowDropdown(false);
                       }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
@@ -216,55 +216,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-
-      {/* Course Portal Modal */}
-      <Transition show={showPortalModal} as={Fragment}>
-        <Dialog as="div" className="fixed inset-0 z-[60]" onClose={() => setShowPortalModal(false)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className={`w-full max-w-md transform overflow-hidden rounded-2xl p-8 text-center shadow-2xl transition-all ${darkMode ? 'bg-[#0b1b36]' : 'bg-white'}`}>
-                  <div className="mb-6">
-                    <img src={logo} alt="ProPM" className="h-16 w-auto mx-auto mb-4" />
-                  </div>
-                  <h3 className={`text-xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Coming Soon
-                  </h3>
-                  <p className={`text-sm mb-6 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    The Course Portal is still under development and will be released in Phase 2.
-                  </p>
-                  <button
-                    onClick={() => setShowPortalModal(false)}
-                    className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-                  >
-                    Close
-                  </button>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
     </header>
   );
 }
