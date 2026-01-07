@@ -41,3 +41,37 @@ export const EXAM_TYPES = [
 
 export type ResourceCategory = typeof RESOURCE_CATEGORIES[number];
 export type ExamType = typeof EXAM_TYPES[number];
+
+// Unenrollment Request Types
+export interface UnenrollmentRequest {
+    $id: string;
+    userId: string;
+    enrollmentId: string;
+    certificationName: string;
+    planTier: string;
+    reasonCategory: UnenrollmentReasonCategory;
+    reasonDetails?: string;
+    status: 'pending' | 'approved' | 'denied';
+    requestedAt: string;
+    enrolledAt: string;
+    processedAt?: string;
+    processedBy?: string;
+    cooldownDays?: number;
+    refundEligible: boolean;
+    refundAmount?: number;
+    $createdAt?: string;
+    $updatedAt?: string;
+}
+
+export const UNENROLLMENT_REASONS = [
+    'Time-Constraints',
+    'Too-Difficult',
+    'Found-Alternative',
+    'Financial-Reasons',
+    'Technical-Issues',
+    'Personal-Family-Reasons',
+    'Course-Not-Meeting-Expectations',
+    'Other',
+] as const;
+
+export type UnenrollmentReasonCategory = typeof UNENROLLMENT_REASONS[number];

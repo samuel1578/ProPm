@@ -17,11 +17,13 @@ import {
     BarChart3,
     Eye,
     X,
+    XCircle,
     FileText,
 } from 'lucide-react';
 import { databases } from '../lib/appwrite';
 import { Query } from 'appwrite';
 import AdminResourceManager from '../components/AdminResourceManager';
+import AdminUnenrollmentManager from '../components/AdminUnenrollmentManager';
 
 const VITE_APPWRITE_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 const COLLECTIONS = {
@@ -33,7 +35,7 @@ const COLLECTIONS = {
     PROGRESS_SUMMARY: import.meta.env.VITE_APPWRITE_PROGRESS_SUMMARY_COLLECTION_ID,
 };
 
-type CollectionKey = keyof typeof COLLECTIONS;
+type CollectionKey = keyof typeof COLLECTIONS | 'RESOURCES' | 'UNENROLLMENT_REQUESTS';
 
 interface CollectionStats {
     total: number;
@@ -126,7 +128,7 @@ export default function AdminDashboard() {
 
             const res = await databases.listDocuments(
                 VITE_APPWRITE_DATABASE_ID,
-                COLLECTIONS[collection],
+                COLLECTIONS[collection as keyof typeof COLLECTIONS],
                 queries
             );
             setDocuments(res.documents);
@@ -145,7 +147,7 @@ export default function AdminDashboard() {
         try {
             await databases.deleteDocument(
                 VITE_APPWRITE_DATABASE_ID,
-                COLLECTIONS[activeTab],
+                COLLECTIONS[activeTab as keyof typeof COLLECTIONS],
                 docId
             );
             loadDocuments(activeTab);
@@ -180,14 +182,14 @@ export default function AdminDashboard() {
             if (modalMode === 'create') {
                 await databases.createDocument(
                     VITE_APPWRITE_DATABASE_ID,
-                    COLLECTIONS[activeTab],
+                    COLLECTIONS[activeTab as keyof typeof COLLECTIONS],
                     'unique()',
                     data
                 );
             } else if (modalMode === 'edit') {
                 await databases.updateDocument(
                     VITE_APPWRITE_DATABASE_ID,
-                    COLLECTIONS[activeTab],
+                    COLLECTIONS[activeTab as keyof typeof COLLECTIONS],
                     selectedDoc.$id,
                     data
                 );
@@ -257,6 +259,12 @@ export default function AdminDashboard() {
             label: 'Resources',
             color: 'teal',
             fields: ['title', 'examType', 'category', 'downloadCount']
+        },
+        UNENROLLMENT_REQUESTS: {
+            icon: XCircle,
+            label: 'Unenrollment Requests',
+            color: 'red',
+            fields: ['userId', 'certificationName', 'status', 'reasonCategory']
         }
     } as const;
 
@@ -268,8 +276,10 @@ export default function AdminDashboard() {
         );
     }
 
-    const config = collectionConfigs[activeTab];
-    const Icon = config.icon;
+    const config = (activeTab === 'RESOURCES' || activeTab === 'UNENROLLMENT_REQUESTS')
+        ? collectionConfigs[activeTab]
+        : collectionConfigs[activeTab as keyof typeof COLLECTIONS];
+    const Icon = config?.icon || FileText;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -379,6 +389,8 @@ export default function AdminDashboard() {
                 {/* Documents Table */}
                 {activeTab === 'RESOURCES' ? (
                     <AdminResourceManager />
+                ) : activeTab === 'UNENROLLMENT_REQUESTS' ? (
+                    <AdminUnenrollmentManager />
                 ) : (
                     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
                         {loading ? (

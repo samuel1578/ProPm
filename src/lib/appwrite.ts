@@ -54,6 +54,7 @@ const QUIZ_ATTEMPTS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_QUIZ_ATTEMPTS
 const USER_PROGRESS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_USER_PROGRESS_COLLECTION_ID as string) || '';
 const RESOURCES_COLLECTION_ID = ((import.meta.env.VITE_APPWRITE_RESOURCES_COLLECTION_ID as string) ?? 'resources').trim() || 'resources';
 const RESOURCES_BUCKET_ID = ((import.meta.env.VITE_APPWRITE_RESOURCES_BUCKET_ID as string) ?? '695e669c00067331e2aa').trim() || '695e669c00067331e2aa';
+const UNENROLLMENT_REQUESTS_COLLECTION_ID = (import.meta.env.VITE_APPWRITE_UNENROLLMENT_REQUESTS_COLLECTION_ID as string) || '';
 const BUCKET_ID = (import.meta.env.VITE_APPWRITE_BUCKET_ID as string) || '';
 
 if (!databases) {
@@ -1144,5 +1145,223 @@ export async function getQuizHistory(userId: string, limit: number = 10) {
     }
 }
 
+// ========================================
+// UNENROLLMENT REQUEST FUNCTIONS
+// ========================================
+
+export async function createUnenrollmentRequest(data: {
+    userId: string;
+    enrollmentId: string;
+    certificationName: string;
+    planTier: string;
+    reasonCategory: string;
+    reasonDetails?: string;
+    enrolledAt: string;
+}) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!UNENROLLMENT_REQUESTS_COLLECTION_ID) {
+        throw new Error('Unenrollment requests collection not configured');
+    }
+
+    try {
+        const now = new Date().toISOString();
+        const request = await databases.createDocument(
+            DATABASE_ID,
+            UNENROLLMENT_REQUESTS_COLLECTION_ID,
+            ID.unique(),
+            {
+                userId: data.userId,
+                enrollmentId: data.enrollmentId,
+                certificationName: data.certificationName,
+                planTier: data.planTier,
+                reasonCategory: data.reasonCategory,
+                reasonDetails: data.reasonDetails || '',
+                status: 'pending',
+                requestedAt: now,
+                enrolledAt: data.enrolledAt,
+                refundEligible: false,
+                refundAmount: 0,
+            }
+        );
+        return request;
+    } catch (err) {
+        console.error('Failed to create unenrollment request:', err);
+        throw err;
+    }
+}
+
+export async function getUserUnenrollmentRequests(userId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!UNENROLLMENT_REQUESTS_COLLECTION_ID) {
+        throw new Error('Unenrollment requests collection not configured');
+    }
+
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            UNENROLLMENT_REQUESTS_COLLECTION_ID,
+            [
+                Query.equal('userId', userId),
+                Query.orderDesc('requestedAt'),
+            ]
+        );
+        return response.documents;
+    } catch (err) {
+        console.error('Failed to get user unenrollment requests:', err);
+        throw err;
+    }
+}
+
+export async function getAllUnenrollmentRequests(statusFilter?: 'pending' | 'approved' | 'denied') {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!UNENROLLMENT_REQUESTS_COLLECTION_ID) {
+        throw new Error('Unenrollment requests collection not configured');
+    }
+
+    try {
+        const queries = [Query.orderDesc('requestedAt')];
+        if (statusFilter) {
+            queries.push(Query.equal('status', statusFilter));
+        }
+
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            UNENROLLMENT_REQUESTS_COLLECTION_ID,
+            queries
+        );
+        return response.documents;
+    } catch (err) {
+        console.error('Failed to get all unenrollment requests:', err);
+        throw err;
+    }
+}
+
+export async function approveUnenrollmentRequest(
+    requestId: string,
+    adminUserId: string,
+    enrollmentId: string,
+    cooldownDays: number,
+    refundEligible: boolean,
+    refundAmount: number
+) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!UNENROLLMENT_REQUESTS_COLLECTION_ID || !ENROLLMENTS_COLLECTION_ID) {
+        throw new Error('Collections not configured');
+    }
+
+    try {
+        const now = new Date();
+        const cooldownEnds = new Date(now);
+        cooldownEnds.setDate(cooldownEnds.getDate() + cooldownDays);
+
+        // Update enrollment to inactive status
+        await databases.updateDocument(
+            DATABASE_ID,
+            ENROLLMENTS_COLLECTION_ID,
+            enrollmentId,
+            {
+                status: 'inactive',
+                unenrolledAt: now.toISOString(),
+                unenrolledBy: adminUserId,
+                cooldownEndsAt: cooldownEnds.toISOString(),
+                refundEligible: refundEligible,
+                refundAmount: refundAmount,
+                refundProcessed: false,
+            }
+        );
+
+        // Update request status
+        const updatedRequest = await databases.updateDocument(
+            DATABASE_ID,
+            UNENROLLMENT_REQUESTS_COLLECTION_ID,
+            requestId,
+            {
+                status: 'approved',
+                processedAt: now.toISOString(),
+                processedBy: adminUserId,
+                cooldownDays: cooldownDays,
+                refundEligible: refundEligible,
+                refundAmount: refundAmount,
+            }
+        );
+
+        return updatedRequest;
+    } catch (err) {
+        console.error('Failed to approve unenrollment request:', err);
+        throw err;
+    }
+}
+
+export async function denyUnenrollmentRequest(requestId: string, adminUserId: string) {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!UNENROLLMENT_REQUESTS_COLLECTION_ID) {
+        throw new Error('Unenrollment requests collection not configured');
+    }
+
+    try {
+        const now = new Date().toISOString();
+        const updatedRequest = await databases.updateDocument(
+            DATABASE_ID,
+            UNENROLLMENT_REQUESTS_COLLECTION_ID,
+            requestId,
+            {
+                status: 'denied',
+                processedAt: now,
+                processedBy: adminUserId,
+            }
+        );
+        return updatedRequest;
+    } catch (err) {
+        console.error('Failed to deny unenrollment request:', err);
+        throw err;
+    }
+}
+
+export async function checkEnrollmentCooldown(userId: string, certificationName: string): Promise<{
+    inCooldown: boolean;
+    cooldownEndsAt?: string;
+    daysRemaining?: number;
+}> {
+    if (!databases) throw new Error(APPWRITE_CONFIG_ERROR);
+    if (!ENROLLMENTS_COLLECTION_ID) {
+        throw new Error('Enrollments collection not configured');
+    }
+
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            ENROLLMENTS_COLLECTION_ID,
+            [
+                Query.equal('userId', userId),
+                Query.equal('status', 'inactive'),
+            ]
+        );
+
+        const inactiveEnrollment = response.documents.find(
+            (doc: any) => doc.certifications && doc.certifications.includes(certificationName)
+        );
+
+        if (inactiveEnrollment && inactiveEnrollment.cooldownEndsAt) {
+            const cooldownEnd = new Date(inactiveEnrollment.cooldownEndsAt);
+            const now = new Date();
+
+            if (cooldownEnd > now) {
+                const daysRemaining = Math.ceil((cooldownEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                return {
+                    inCooldown: true,
+                    cooldownEndsAt: inactiveEnrollment.cooldownEndsAt,
+                    daysRemaining,
+                };
+            }
+        }
+
+        return { inCooldown: false };
+    } catch (err) {
+        console.error('Failed to check enrollment cooldown:', err);
+        throw err;
+    }
+}
+
 export { client, account, databases, storage };
+
 

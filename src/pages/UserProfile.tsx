@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Briefcase, FileText, Shield, Edit2, AlertCircle, BookOpen, ChevronRight } from 'lucide-react';
+import { User, Briefcase, FileText, Shield, Edit2, AlertCircle, BookOpen, ChevronRight, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile, getUserEnrollments } from '../lib/appwrite';
+import { getUserProfile, getUserEnrollments, createUnenrollmentRequest, getUserUnenrollmentRequests } from '../lib/appwrite';
 import type { UserProfile as UserProfileType } from '../types/profile';
+import { UNENROLLMENT_REASONS, type UnenrollmentRequest, type UnenrollmentReasonCategory } from '../types/resources';
 
 interface Enrollment {
     $id: string;
@@ -14,6 +15,7 @@ interface Enrollment {
     certifications: string[];
     status: string;
     createdAt: string;
+    cooldownEndsAt?: string;
 }
 
 export default function UserProfile() {
@@ -22,6 +24,14 @@ export default function UserProfile() {
     const [profile, setProfile] = useState<UserProfileType | null>(null);
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [unenrollmentRequests, setUnenrollmentRequests] = useState<UnenrollmentRequest[]>([]);
+    const [showUnenrollModal, setShowUnenrollModal] = useState(false);
+    const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
+    const [unenrollForm, setUnenrollForm] = useState<{ reasonCategory: UnenrollmentReasonCategory; reasonDetails: string }>({
+        reasonCategory: UNENROLLMENT_REASONS[0],
+        reasonDetails: ''
+    });
+    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         if (!user) {
@@ -53,6 +63,14 @@ export default function UserProfile() {
                 } catch (enrollmentErr) {
                     console.error('Failed to load enrollments', enrollmentErr);
                     // Don't fail the whole page if enrollments fail to load
+                }
+
+                // Fetch unenrollment requests
+                try {
+                    const requests = await getUserUnenrollmentRequests(user.$id);
+                    setUnenrollmentRequests(requests as unknown as UnenrollmentRequest[]);
+                } catch (err) {
+                    console.error('Failed to load unenrollment requests', err);
                 }
             } catch (err: any) {
                 console.error('Failed to load profile', err);
@@ -321,6 +339,36 @@ export default function UserProfile() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Unenrollment Button */}
+                                        {enrollment.status === 'active' && (
+                                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                                {unenrollmentRequests.some(r => r.enrollmentId === enrollment.$id && r.status === 'pending') ? (
+                                                    <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
+                                                        <Clock className="w-4 h-4" />
+                                                        <span>Unenrollment request pending</span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedEnrollment(enrollment);
+                                                            setShowUnenrollModal(true);
+                                                        }}
+                                                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                        Request Unenrollment
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                        {enrollment.status === 'inactive' && enrollment.cooldownEndsAt && new Date(enrollment.cooldownEndsAt) > new Date() && (
+                                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                                <div className="text-sm text-red-600 dark:text-red-400">
+                                                    Re-enrollment available in {Math.ceil((new Date(enrollment.cooldownEndsAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -328,6 +376,125 @@ export default function UserProfile() {
                     </div>
                 )}
             </section>
+
+            {/* Unenrollment Request Modal */}
+            {showUnenrollModal && selectedEnrollment && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-[#0b1b36] rounded-xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                            Request Unenrollment
+                        </h3>
+
+                        <div className="space-y-4 mb-6">
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                <div className="flex gap-2">
+                                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                                    <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                                        <p className="font-semibold mb-1">Important:</p>
+                                        <ul className="list-disc list-inside space-y-1">
+                                            <li>You will lose access to course materials</li>
+                                            <li>A cooldown period will apply before re-enrollment</li>
+                                            <li>Partial refunds may be available based on your plan</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Reason for leaving *
+                                </label>
+                                <select
+                                    value={unenrollForm.reasonCategory}
+                                    onChange={(e) => setUnenrollForm({ ...unenrollForm, reasonCategory: e.target.value as UnenrollmentReasonCategory })}
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0d2244] text-gray-900 dark:text-white"
+                                >
+                                    {UNENROLLMENT_REASONS.map((reason) => (
+                                        <option key={reason} value={reason}>
+                                            {reason.replace(/-/g, ' ')}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Additional details {unenrollForm.reasonCategory === 'Other' && '*'}
+                                </label>
+                                <textarea
+                                    value={unenrollForm.reasonDetails}
+                                    onChange={(e) => setUnenrollForm({ ...unenrollForm, reasonDetails: e.target.value })}
+                                    rows={4}
+                                    placeholder="Please provide more information about your decision..."
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#0d2244] text-gray-900 dark:text-white"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => {
+                                    setShowUnenrollModal(false);
+                                    setSelectedEnrollment(null);
+                                    setUnenrollForm({ reasonCategory: UNENROLLMENT_REASONS[0], reasonDetails: '' });
+                                }}
+                                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (unenrollForm.reasonCategory === 'Other' && !unenrollForm.reasonDetails.trim()) {
+                                        alert('Please provide details for "Other" reason');
+                                        return;
+                                    }
+
+                                    setProcessing(true);
+                                    try {
+                                        await createUnenrollmentRequest({
+                                            userId: user!.$id,
+                                            enrollmentId: selectedEnrollment.$id,
+                                            certificationName: selectedEnrollment.certifications[0] || selectedEnrollment.planName,
+                                            planTier: selectedEnrollment.planName,
+                                            reasonCategory: unenrollForm.reasonCategory,
+                                            reasonDetails: unenrollForm.reasonDetails,
+                                            enrolledAt: selectedEnrollment.createdAt,
+                                        });
+
+                                        alert('Unenrollment request submitted successfully. An admin will review it shortly.');
+                                        setShowUnenrollModal(false);
+                                        setSelectedEnrollment(null);
+                                        setUnenrollForm({ reasonCategory: UNENROLLMENT_REASONS[0], reasonDetails: '' });
+
+                                        // Reload requests
+                                        const requests = await getUserUnenrollmentRequests(user!.$id);
+                                        setUnenrollmentRequests(requests as unknown as UnenrollmentRequest[]);
+                                    } catch (error: any) {
+                                        console.error('Failed to submit unenrollment request:', error);
+                                        alert(error?.message || 'Failed to submit request');
+                                    } finally {
+                                        setProcessing(false);
+                                    }
+                                }}
+                                disabled={processing}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {processing ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        Submitting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <XCircle className="w-4 h-4" />
+                                        Submit Request
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -7,6 +7,8 @@ export interface PricingPlan {
     popular?: boolean;
     cta: string;
     certifications: string[];
+    cooldownDays: number; // Days before user can re-enroll after unenrollment
+    refundEligibilityDays: number; // Days within which partial refund is available
 }
 
 export const plans: PricingPlan[] = [
@@ -27,6 +29,8 @@ export const plans: PricingPlan[] = [
             'Project management fundamentals',
         ],
         cta: 'Get Started',
+        cooldownDays: 60,
+        refundEligibilityDays: 7,
     },
     {
         name: 'Intermediate Plan',
@@ -48,6 +52,8 @@ export const plans: PricingPlan[] = [
         ],
         popular: true,
         cta: 'Get Started',
+        cooldownDays: 45,
+        refundEligibilityDays: 14,
     },
     {
         name: 'Comprehensive Plan',
@@ -70,5 +76,7 @@ export const plans: PricingPlan[] = [
             'Lifetime community access',
         ],
         cta: 'Get Started',
+        cooldownDays: 30,
+        refundEligibilityDays: 21,
     },
 ];

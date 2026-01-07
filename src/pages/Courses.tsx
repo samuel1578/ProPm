@@ -462,13 +462,64 @@ export default function Courses() {
                       ) : (
                         <>
                           {user ? (
-                            <button
-                              onClick={() => handleEnrollClick(certification)}
-                              disabled={processing || !enrollmentsConfigured}
-                              className="block w-full px-4 py-3 bg-blue-600 text-white text-center font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-                            >
-                              {processing ? 'Processing...' : enrollmentsConfigured ? 'Enroll Now' : 'Enrollment Unavailable'}
-                            </button>
+                            (() => {
+                              // Check if user has active enrollment for this certification
+                              const hasActiveEnrollment = userEnrollments.some(
+                                (enrollment: any) =>
+                                  enrollment.status === 'active' &&
+                                  enrollment.certifications?.some((cert: string) =>
+                                    cert.toLowerCase().includes(certification.id)
+                                  )
+                              );
+
+                              // Check if user is in cooldown period
+                              const cooldownEnrollment = userEnrollments.find(
+                                (enrollment: any) =>
+                                  enrollment.status === 'inactive' &&
+                                  enrollment.certifications?.some((cert: string) =>
+                                    cert.toLowerCase().includes(certification.id)
+                                  ) &&
+                                  enrollment.cooldownEndsAt &&
+                                  new Date(enrollment.cooldownEndsAt) > new Date()
+                              );
+
+                              const daysRemaining = cooldownEnrollment
+                                ? Math.ceil(
+                                  (new Date(cooldownEnrollment.cooldownEndsAt).getTime() -
+                                    new Date().getTime()) /
+                                  (1000 * 60 * 60 * 24)
+                                )
+                                : 0;
+
+                              if (cooldownEnrollment) {
+                                return (
+                                  <div className="px-4 py-3 rounded-lg border border-red-500/60 bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-200 text-sm text-center font-medium">
+                                    Re-enrollment available in {daysRemaining} day{daysRemaining !== 1 ? 's' : ''}
+                                  </div>
+                                );
+                              }
+
+                              if (hasActiveEnrollment) {
+                                return (
+                                  <Link
+                                    to="/course-portal"
+                                    className="block w-full px-4 py-3 bg-green-600 text-white text-center font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                                  >
+                                    Go to Course Portal
+                                  </Link>
+                                );
+                              }
+
+                              return (
+                                <button
+                                  onClick={() => handleEnrollClick(certification)}
+                                  disabled={processing || !enrollmentsConfigured}
+                                  className="block w-full px-4 py-3 bg-blue-600 text-white text-center font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
+                                >
+                                  {processing ? 'Processing...' : enrollmentsConfigured ? 'Enroll Now' : 'Enrollment Unavailable'}
+                                </button>
+                              );
+                            })()
                           ) : (
                             <Link
                               to="/signup"
