@@ -81,8 +81,8 @@ export default function Header() {
     <header
       style={{ fontFamily: "'Poppins', 'Inter', 'SF Pro Display', 'Helvetica Neue', sans-serif" }}
       className={`fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ease-out ${isScrolled
-        ? 'bg-white sm:bg-white/75 dark:bg-[#080A12] backdrop-blur-2xl border-white/20 shadow-[0_12px_40px_rgba(3,9,30,0.45)]'
-        : 'bg-white sm:bg-white/60 dark:bg-[#080A12] backdrop-blur-xl border-white/10 shadow-[0_25px_65px_rgba(4,10,25,0.55)]'
+        ? 'bg-[#FEFEFE] dark:bg-[#080A12] backdrop-blur-2xl border-white/20 shadow-[0_12px_40px_rgba(3,9,30,0.45)]'
+        : 'bg-[#FEFEFE] dark:bg-[#080A12] backdrop-blur-xl border-white/10 shadow-[0_25px_65px_rgba(4,10,25,0.55)]'
         }`}
     >
       <div

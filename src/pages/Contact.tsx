@@ -83,22 +83,83 @@ export default function Contact() {
 
   return (
     <div className="bg-white dark:bg-[#071330]">
-      <section id="contact-top" className="py-16 sm:py-20 bg-gradient-to-br from-blue-50 via-white to-white dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Get in Touch
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
-            Have questions? We're here to help. Reach out to us anytime.
-          </p>
-          <img src={contactImg} alt="Contact" className="mx-auto mt-6 w-full max-w-md rounded-lg shadow-lg object-cover" />
+      <section id="contact-top" className="py-16 sm:py-20 lg:py-24 bg-[#E7EAE5] dark:bg-gradient-to-br dark:from-[#0d2244] dark:via-[#071330] dark:to-[#050b1a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left: Text Content */}
+            <div className="space-y-6 lg:pr-8 lg:order-1">
+              {/* Heading with dashed lines on mobile */}
+              <div className="flex items-center justify-center lg:justify-start gap-3 lg:gap-0">
+                <div className="hidden max-[1023px]:block flex-1 border-t-2 border-dashed border-gray-400 dark:border-gray-500"></div>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight text-center lg:text-left px-4 lg:px-0">
+                  Get in Touch
+                </h1>
+                <div className="hidden max-[1023px]:block flex-1 border-t-2 border-dashed border-gray-400 dark:border-gray-500"></div>
+              </div>
+
+              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed text-center lg:text-left">
+                Have questions? We're here to help. Reach out to us anytime.
+              </p>
+
+              {/* Hero Image Card - Mobile only */}
+              <div className="relative lg:hidden">
+                <div className="relative bg-white dark:bg-[#0b1b36] rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <img
+                    src={contactImg}
+                    alt="Contact Support"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <a
+                  href="#contact-form"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="inline-flex items-center justify-center px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg shadow-blue-500/30 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5"
+                >
+                  <Send className="h-5 w-5 mr-2" />
+                  Send Message
+                </a>
+                <a
+                  href="#faq"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  className="inline-flex items-center justify-center px-6 py-3.5 bg-white dark:bg-[#0b1b36] border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-all duration-200"
+                >
+                  <HelpCircle className="h-5 w-5 mr-2" />
+                  View FAQs
+                </a>
+              </div>
+            </div>
+
+            {/* Right: Hero Image Card - Desktop only */}
+            <div className="relative lg:pl-8 hidden lg:block lg:order-2">
+              <div className="relative bg-white dark:bg-[#0b1b36] rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-transform duration-300 hover:scale-[1.02]">
+                <img
+                  src={contactImg}
+                  alt="Contact Support"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+              {/* Decorative element */}
+              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-blue-500/10 dark:bg-blue-400/10 rounded-full blur-3xl -z-10"></div>
+              <div className="absolute -top-4 -left-4 w-24 h-24 bg-green-500/10 dark:bg-green-400/10 rounded-full blur-2xl -z-10"></div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Scroll to hash (e.g. /contact#contact-top) or top on navigation */}
       <ScrollHandler />
 
-      <section className="py-16 sm:py-20">
+      <section id="contact-form" className="py-16 sm:py-20 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
@@ -152,7 +213,7 @@ export default function Contact() {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-[#0b1b36] text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-[#FDF5E6] dark:bg-[#0b1b36] text-gray-900 dark:text-white"
                   >
                     <option value="">Select a subject</option>
                     <option value="course-inquiry">Course Inquiry</option>
@@ -257,7 +318,7 @@ export default function Contact() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-20 bg-gray-50 dark:bg-[#050b1a]">
+      <section id="faq" className="py-16 sm:py-20 bg-gray-50 dark:bg-[#050b1a] border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
